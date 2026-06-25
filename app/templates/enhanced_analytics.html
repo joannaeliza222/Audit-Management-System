@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Analytics Dashboard - Enhanced AMS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='enhanced_styles.css') }}">
+</head>
+<body data-page="analytics">
+
+<div class="app-shell">
+  <!-- Enhanced Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand text-white fw-bold" href="{{ url_for('enhanced_frontend.enhanced_index') }}">
+        <img class="logo-box" src="{{ url_for('static', filename='logo.png') }}" height="32" class="me-2" style="background-color: white; padding: 4px; border-radius: 4px;"> Audit Management System
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="bi bi-clipboard-data"></i> Query Management
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('enhanced_frontend.create_query') }}">
+                <i class="bi bi-plus-circle"></i> Create Query
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('pending.pending') }}">
+                <i class="bi bi-hourglass-split"></i> Pending Queries
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('replied.replied') }}">
+                <i class="bi bi-search"></i> Search Queries
+              </a></li>
+              {% if role == 'admin' %}
+              <li><a class="dropdown-item" href="{{ url_for('review.review_drafts') }}">
+                <i class="bi bi-book"></i> Review Answers
+              </a></li>
+              {% endif %}
+            </ul>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('futurefix.future_issues') }}">
+              <i class="bi bi-tools"></i> Upcoming Version Fixes
+            </a>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="bi bi-graph-up"></i> Analytics
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('audit_analytics.audit_analytics') }}">
+                <i class="bi bi-bar-chart"></i> Audit Analytics
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="showDataDumpAnalytics()">
+                <i class="bi bi-database"></i> Data Dump Analytics
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="showAIAnalytics()">
+                <i class="bi bi-cpu"></i> AI Performance
+              </a></li>
+            </ul>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="bi bi-file-text"></i> Documents
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="#" onclick="showDocumentUpload()">
+                <i class="bi bi-upload"></i> Upload Document
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="showKnowledgeBase()">
+                <i class="bi bi-journal-text"></i> Knowledge Base
+              </a></li>
+            </ul>
+          </li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}">
+            <i class="bi bi-box-arrow-right"></i> Logout
+          </a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="my-4">
+    <div class="container">
+      <!-- Page Header -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card-soft p-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <div>
+                <h1 class="h3 m-0">Analytics Dashboard</h1>
+                <p class="text-secondary mt-2 mb-0">Comprehensive insights and performance metrics</p>
+              </div>
+              <div class="d-flex gap-2">
+                <div class="btn-group" role="group">
+                  <button type="button" class="btn btn-outline-primary active" onclick="updateAnalyticsPeriod('7d')">7 Days</button>
+                  <button type="button" class="btn btn-outline-primary" onclick="updateAnalyticsPeriod('30d')">30 Days</button>
+                  <button type="button" class="btn btn-outline-primary" onclick="updateAnalyticsPeriod('90d')">90 Days</button>
+                </div>
+                <button class="btn btn-primary" onclick="exportAnalytics()">
+                  <i class="bi bi-download"></i> Export
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Key Performance Indicators -->
+      <div class="row g-4 mb-4">
+        <div class="col-12 col-md-3">
+          <div class="kpi-card p-4 h-100" style="border-left: 4px solid #4ECDC4;">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <div class="text-secondary small">Total Queries</div>
+                <div class="kpi-number" id="totalQueries">0</div>
+                <div class="text-success small">
+                  <i class="bi bi-arrow-up"></i> <span id="queriesChange">+0%</span>
+                </div>
+              </div>
+              <div class="kpi-icon bg-success-subtle text-success">
+                <i class="bi bi-clipboard-data"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-3">
+          <div class="kpi-card p-4 h-100" style="border-left: 4px solid #45B7D1;">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <div class="text-secondary small">Avg Response Time</div>
+                <div class="kpi-number" id="avgResponseTime">0h</div>
+                <div class="text-info small">
+                  <i class="bi bi-arrow-down"></i> <span id="responseTimeChange">-0%</span>
+                </div>
+              </div>
+              <div class="kpi-icon bg-primary-subtle text-primary">
+                <i class="bi bi-clock"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-3">
+          <div class="kpi-card p-4 h-100" style="border-left: 4px solid #FFD93D;">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <div class="text-secondary small">Response Rate</div>
+                <div class="kpi-number" id="responseRate">0%</div>
+                <div class="text-warning small">
+                  <i class="bi bi-arrow-up"></i> <span id="responseRateChange">+0%</span>
+                </div>
+              </div>
+              <div class="kpi-icon bg-warning-subtle text-warning">
+                <i class="bi bi-percent"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-3">
+          <div class="kpi-card p-4 h-100" style="border-left: 4px solid #6BCF7F;">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <div class="text-secondary small">AI Accuracy</div>
+                <div class="kpi-number" id="aiAccuracy">0%</div>
+                <div class="text-success small">
+                  <i class="bi bi-arrow-up"></i> <span id="aiAccuracyChange">+0%</span>
+                </div>
+              </div>
+              <div class="kpi-icon bg-success-subtle text-success">
+                <i class="bi bi-cpu"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row 1 -->
+      <div class="row g-4 mb-4">
+        <div class="col-12 col-lg-8">
+          <div class="card-soft p-4">
+            <h3 class="h5 m-0 mb-3">Query Volume Trends</h3>
+            <canvas id="queryVolumeChart" height="100"></canvas>
+          </div>
+        </div>
+        <div class="col-12 col-lg-4">
+          <div class="card-soft p-4">
+            <h3 class="h5 m-0 mb-3">Query Status Distribution</h3>
+            <canvas id="queryStatusChart" height="200"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row 2 -->
+      <div class="row g-4 mb-4">
+        <div class="col-12 col-lg-6">
+          <div class="card-soft p-4">
+            <h3 class="h5 m-0 mb-3">Department Performance</h3>
+            <canvas id="departmentPerformanceChart" height="150"></canvas>
+          </div>
+        </div>
+        <div class="col-12 col-lg-6">
+          <div class="card-soft p-4">
+            <h3 class="h5 m-0 mb-3">Response Time Analysis</h3>
+            <canvas id="responseTimeChart" height="150"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Performance Section -->
+      <div class="row g-4 mb-4">
+        <div class="col-12">
+          <div class="card-soft p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h3 class="h5 m-0">AI Performance Metrics</h3>
+              <button class="btn btn-sm btn-outline-primary" onclick="showAIDetails()">
+                <i class="bi bi-info-circle"></i> Details
+              </button>
+            </div>
+            <div class="row g-3">
+              <div class="col-md-3">
+                <div class="text-center">
+                  <div class="h4 text-primary" id="similarityAccuracy">0%</div>
+                  <small class="text-muted">Similarity Search Accuracy</small>
+                  <div class="progress mt-2">
+                    <div class="progress-bar bg-primary" style="width: 0%"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="text-center">
+                  <div class="h4 text-success" id="commitmentDetection">0%</div>
+                  <small class="text-muted">Commitment Detection Rate</small>
+                  <div class="progress mt-2">
+                    <div class="progress-bar bg-success" style="width: 0%"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="text-center">
+                  <div class="h4 text-info" id="avgAnalysisTime">0ms</div>
+                  <small class="text-muted">Avg Analysis Time</small>
+                  <div class="progress mt-2">
+                    <div class="progress-bar bg-info" style="width: 0%"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="text-center">
+                  <div class="h4 text-warning" id="cacheHitRate">0%</div>
+                  <small class="text-muted">Cache Hit Rate</small>
+                  <div class="progress mt-2">
+                    <div class="progress-bar bg-warning" style="width: 0%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detailed Tables -->
+      <div class="row g-4">
+        <div class="col-12 col-lg-6">
+          <div class="card-soft p-4">
+            <h3 class="h5 m-0 mb-3">Top Performing States</h3>
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>State</th>
+                    <th>Queries</th>
+                    <th>Response Rate</th>
+                    <th>Avg Time</th>
+                    <th>Performance</th>
+                  </tr>
+                </thead>
+                <tbody id="topStatesTable">
+                  <!-- Populated by JavaScript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-lg-6">
+          <div class="card-soft p-4">
+            <h3 class="h5 m-0 mb-3">Recent Activity Summary</h3>
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Period</th>
+                    <th>Queries</th>
+                    <th>Responses</th>
+                    <th>Commitments</th>
+                    <th>Trend</th>
+                  </tr>
+                </thead>
+                <tbody id="activitySummaryTable">
+                  <!-- Populated by JavaScript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- AI Details Modal -->
+<div class="modal fade" id="aiDetailsModal" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">AI Performance Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-12">
+            <h6>Active Models</h6>
+            <div id="aiModelsList">
+              <!-- Populated by JavaScript -->
+            </div>
+          </div>
+          <div class="col-12">
+            <h6>Performance Trends</h6>
+            <canvas id="aiPerformanceTrendChart" height="100"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Enhanced Analytics Dashboard JavaScript
+class AnalyticsDashboard {
+    constructor() {
+        this.apiBase = '/api/enhanced';
+        this.currentPeriod = '30d';
+        this.charts = {};
+        this.init();
+    }
+
+    init() {
+        this.initializeCharts();
+        this.loadAnalyticsData();
+        this.startAutoRefresh();
+    }
+
+    // Initialize all charts
+    initializeCharts() {
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top'
+                }
+            }
+        };
+
+        // Query Volume Chart
+        const queryVolumeCtx = document.getElementById('queryVolumeChart');
+        if (queryVolumeCtx) {
+            this.charts.queryVolume = new Chart(queryVolumeCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Queries Received',
+                        data: [],
+                        borderColor: '#4ECDC4',
+                        backgroundColor: 'rgba(78, 205, 196, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Queries Answered',
+                        data: [],
+                        borderColor: '#45B7D1',
+                        backgroundColor: 'rgba(69, 183, 209, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: chartOptions
+            });
+        }
+
+        // Query Status Chart
+        const queryStatusCtx = document.getElementById('queryStatusChart');
+        if (queryStatusCtx) {
+            this.charts.queryStatus = new Chart(queryStatusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Received', 'In Progress', 'Answered', 'Closed'],
+                    datasets: [{
+                        data: [0, 0, 0, 0],
+                        backgroundColor: ['#FFD93D', '#45B7D1', '#6BCF7F', '#96CEB4']
+                    }]
+                },
+                options: {
+                    ...chartOptions,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Department Performance Chart
+        const deptPerfCtx = document.getElementById('departmentPerformanceChart');
+        if (deptPerfCtx) {
+            this.charts.departmentPerformance = new Chart(deptPerfCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Queries',
+                        data: [],
+                        backgroundColor: '#4ECDC4'
+                    }, {
+                        label: 'Response Rate (%)',
+                        data: [],
+                        backgroundColor: '#45B7D1'
+                    }]
+                },
+                options: chartOptions
+            });
+        }
+
+        // Response Time Chart
+        const responseTimeCtx = document.getElementById('responseTimeChart');
+        if (responseTimeCtx) {
+            this.charts.responseTime = new Chart(responseTimeCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Average Response Time (hours)',
+                        data: [],
+                        borderColor: '#FF6B6B',
+                        backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: chartOptions
+            });
+        }
+
+        // AI Performance Trend Chart
+        const aiPerfCtx = document.getElementById('aiPerformanceTrendChart');
+        if (aiPerfCtx) {
+            this.charts.aiPerformanceTrend = new Chart(aiPerfCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Similarity Accuracy',
+                        data: [],
+                        borderColor: '#4ECDC4',
+                        tension: 0.4
+                    }, {
+                        label: 'Commitment Detection',
+                        data: [],
+                        borderColor: '#45B7D1',
+                        tension: 0.4
+                    }]
+                },
+                options: chartOptions
+            });
+        }
+    }
+
+    // Load analytics data
+    async loadAnalyticsData() {
+        try {
+            const response = await fetch(`${this.apiBase}/analytics/performance?days=${this.getDaysFromPeriod()}`);
+            const result = await response.json();
+            
+            if (result.success) {
+                this.updateKPIs(result.analytics);
+                this.updateCharts(result.analytics);
+                this.updateTables(result.analytics);
+            } else {
+                enhancedAMS.showError('Failed to load analytics data');
+            }
+        } catch (error) {
+            console.error('Error loading analytics data:', error);
+            enhancedAMS.showError('Failed to load analytics data');
+        }
+    }
+
+    // Update KPI cards
+    updateKPIs(data) {
+        document.getElementById('totalQueries').textContent = data.query_volume?.total_queries || 0;
+        document.getElementById('avgResponseTime').textContent = `${(data.response_times?.average_days || 0).toFixed(1)}h`;
+        document.getElementById('responseRate').textContent = `${((data.response_times?.response_rate || 0) * 100).toFixed(1)}%`;
+        document.getElementById('aiAccuracy').textContent = `${((data.ai_performance?.similarity_search_accuracy || 0) * 100).toFixed(1)}%`;
+
+        // Update change indicators (mock data)
+        document.getElementById('queriesChange').textContent = '+12.5%';
+        document.getElementById('responseTimeChange').textContent = '-8.3%';
+        document.getElementById('responseRateChange').textContent = '+5.7%';
+        document.getElementById('aiAccuracyChange').textContent = '+2.1%';
+
+        // Update AI metrics
+        this.updateAIMetrics(data.ai_performance);
+    }
+
+    // Update AI metrics
+    updateAIMetrics(aiData) {
+        const similarityAccuracy = (aiData?.similarity_search_accuracy || 0) * 100;
+        const commitmentDetection = (aiData?.commitment_detection_accuracy || 0) * 100;
+        const avgAnalysisTime = aiData?.avg_analysis_time_ms || 0;
+        const cacheHitRate = (aiData?.cache_hit_rate || 0) * 100;
+
+        document.getElementById('similarityAccuracy').textContent = `${similarityAccuracy.toFixed(1)}%`;
+        document.getElementById('commitmentDetection').textContent = `${commitmentDetection.toFixed(1)}%`;
+        document.getElementById('avgAnalysisTime').textContent = `${avgAnalysisTime}ms`;
+        document.getElementById('cacheHitRate').textContent = `${cacheHitRate.toFixed(1)}%`;
+
+        // Update progress bars
+        document.querySelector('#similarityAccuracy').nextElementSibling.nextElementSibling.querySelector('.progress-bar').style.width = `${similarityAccuracy}%`;
+        document.querySelector('#commitmentDetection').nextElementSibling.nextElementSibling.querySelector('.progress-bar').style.width = `${commitmentDetection}%`;
+        document.querySelector('#avgAnalysisTime').nextElementSibling.nextElementSibling.querySelector('.progress-bar').style.width = `${Math.min(avgAnalysisTime / 20, 100)}%`;
+        document.querySelector('#cacheHitRate').nextElementSibling.nextElementSibling.querySelector('.progress-bar').style.width = `${cacheHitRate}%`;
+    }
+
+    // Update all charts
+    updateCharts(data) {
+        const days = this.getDaysFromPeriod();
+        const labels = this.generateDateLabels(days);
+
+        // Update Query Volume Chart
+        if (this.charts.queryVolume) {
+            this.charts.queryVolume.data.labels = labels;
+            this.charts.queryVolume.data.datasets[0].data = this.generateMockData(days, 5, 25);
+            this.charts.queryVolume.data.datasets[1].data = this.generateMockData(days, 3, 20);
+            this.charts.queryVolume.update();
+        }
+
+        // Update Query Status Chart
+        if (this.charts.queryStatus) {
+            const statusData = [
+                data.query_volume?.by_status?.received || 15,
+                data.query_volume?.by_status?.in_progress || 8,
+                data.query_volume?.by_status?.responded || 25,
+                data.query_volume?.by_status?.closed || 12
+            ];
+            this.charts.queryStatus.data.datasets[0].data = statusData;
+            this.charts.queryStatus.update();
+        }
+
+        // Update Department Performance Chart
+        if (this.charts.departmentPerformance) {
+            const departments = Object.keys(data.departments || {});
+            const queryCounts = departments.map(dept => data.departments[dept] || Math.floor(Math.random() * 30) + 10);
+            const responseRates = departments.map(() => Math.floor(Math.random() * 30) + 70);
+
+            this.charts.departmentPerformance.data.labels = departments.length > 0 ? departments : ['Finance', 'IT', 'Operations', 'HR'];
+            this.charts.departmentPerformance.data.datasets[0].data = queryCounts.length > 0 ? queryCounts : [25, 18, 22, 15];
+            this.charts.departmentPerformance.data.datasets[1].data = responseRates.length > 0 ? responseRates : [85, 78, 82, 90];
+            this.charts.departmentPerformance.update();
+        }
+
+        // Update Response Time Chart
+        if (this.charts.responseTime) {
+            this.charts.responseTime.data.labels = labels;
+            this.charts.responseTime.data.datasets[0].data = this.generateMockData(days, 24, 72);
+            this.charts.responseTime.update();
+        }
+    }
+
+    // Update tables
+    updateTables(data) {
+        this.updateTopStatesTable();
+        this.updateActivitySummaryTable();
+    }
+
+    // Update top states table
+    updateTopStatesTable() {
+        const tbody = document.getElementById('topStatesTable');
+        if (!tbody) return;
+
+        const states = [
+            { name: 'California', queries: 45, responseRate: 92, avgTime: 36, performance: 'excellent' },
+            { name: 'Texas', queries: 38, responseRate: 87, avgTime: 42, performance: 'good' },
+            { name: 'New York', queries: 32, responseRate: 89, avgTime: 38, performance: 'good' },
+            { name: 'Florida', queries: 28, responseRate: 85, avgTime: 45, performance: 'good' },
+            { name: 'Illinois', queries: 24, responseRate: 78, avgTime: 52, performance: 'average' }
+        ];
+
+        tbody.innerHTML = states.map(state => `
+            <tr>
+                <td>${state.name}</td>
+                <td>${state.queries}</td>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <span>${state.responseRate}%</span>
+                        <div class="progress" style="width: 60px; height: 8px;">
+                            <div class="progress-bar bg-${this.getPerformanceColor(state.performance)}" 
+                                 style="width: ${state.responseRate}%"></div>
+                        </div>
+                    </div>
+                </td>
+                <td>${state.avgTime}h</td>
+                <td><span class="badge bg-${this.getPerformanceColor(state.performance)}">${state.performance}</span></td>
+            </tr>
+        `).join('');
+    }
+
+    // Update activity summary table
+    updateActivitySummaryTable() {
+        const tbody = document.getElementById('activitySummaryTable');
+        if (!tbody) return;
+
+        const periods = [
+            { period: 'Last 7 days', queries: 125, responses: 108, commitments: 23, trend: 'up' },
+            { period: 'Last 14 days', queries: 248, responses: 215, commitments: 47, trend: 'up' },
+            { period: 'Last 30 days', queries: 485, responses: 423, commitments: 89, trend: 'up' },
+            { period: 'Last 90 days', queries: 1425, responses: 1287, commitments: 267, trend: 'stable' }
+        ];
+
+        tbody.innerHTML = periods.map(period => `
+            <tr>
+                <td>${period.period}</td>
+                <td>${period.queries}</td>
+                <td>${period.responses}</td>
+                <td>${period.commitments}</td>
+                <td>
+                    <i class="bi bi-arrow-${period.trend === 'up' ? 'up text-success' : 'right text-warning'}"></i>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // Show AI details modal
+    async showAIDetails() {
+        try {
+            const response = await fetch(`${this.apiBase}/ai/model-performance`);
+            const result = await response.json();
+            
+            if (result.success) {
+                this.displayAIDetails(result.ai_performance);
+            } else {
+                enhancedAMS.showError('Failed to load AI performance details');
+            }
+        } catch (error) {
+            console.error('Error loading AI details:', error);
+            enhancedAMS.showError('Failed to load AI performance details');
+        }
+    }
+
+    // Display AI details
+    displayAIDetails(aiData) {
+        const modelsList = document.getElementById('aiModelsList');
+        if (modelsList && aiData.models) {
+            modelsList.innerHTML = Object.entries(aiData.models).map(([name, model]) => `
+                <div class="card mb-2">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>${model.model_name}</strong><br>
+                                <small class="text-muted">Status: ${model.status}</small>
+                            </div>
+                            <div class="col-md-6">
+                                <small>Memory: ${model.memory_usage_mb}MB</small><br>
+                                <small>Daily Requests: ${model.daily_requests}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Update AI performance trend chart
+        if (this.charts.aiPerformanceTrend) {
+            const labels = this.generateDateLabels(30);
+            this.charts.aiPerformanceTrend.data.labels = labels;
+            this.charts.aiPerformanceTrend.data.datasets[0].data = this.generateMockData(30, 75, 95);
+            this.charts.aiPerformanceTrend.data.datasets[1].data = this.generateMockData(30, 65, 85);
+            this.charts.aiPerformanceTrend.update();
+        }
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('aiDetailsModal'));
+        modal.show();
+    }
+
+    // Helper methods
+    getDaysFromPeriod() {
+        const periodMap = { '7d': 7, '30d': 30, '90d': 90 };
+        return periodMap[this.currentPeriod] || 30;
+    }
+
+    generateDateLabels(days) {
+        const labels = [];
+        const today = new Date();
+        
+        for (let i = days - 1; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(date.getDate() - i);
+            labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+        }
+        
+        return labels;
+    }
+
+    generateMockData(count, min, max) {
+        const data = [];
+        for (let i = 0; i < count; i++) {
+            data.push(Math.floor(Math.random() * (max - min + 1)) + min);
+        }
+        return data;
+    }
+
+    getPerformanceColor(performance) {
+        const colors = {
+            'excellent': 'success',
+            'good': 'primary',
+            'average': 'warning',
+            'poor': 'danger'
+        };
+        return colors[performance] || 'secondary';
+    }
+
+    startAutoRefresh() {
+        setInterval(() => {
+            this.loadAnalyticsData();
+        }, 300000); // Every 5 minutes
+    }
+
+    updateAnalyticsPeriod(period) {
+        this.currentPeriod = period;
+        
+        // Update button states
+        document.querySelectorAll('[onclick^="updateAnalyticsPeriod"]').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        // Reload data
+        this.loadAnalyticsData();
+    }
+
+    exportAnalytics() {
+        enhancedAMS.showError('Export functionality coming soon!');
+    }
+}
+
+// Global functions
+let analyticsDashboard;
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    analyticsDashboard = new AnalyticsDashboard();
+});
+
+// Global functions for HTML onclick handlers
+function updateAnalyticsPeriod(period) {
+    analyticsDashboard.updateAnalyticsPeriod(period);
+}
+
+function showAIDetails() {
+    analyticsDashboard.showAIDetails();
+}
+
+function exportAnalytics() {
+    analyticsDashboard.exportAnalytics();
+}
+
+function showCommitmentMonitoring() {
+    window.location.href = '/commitment_dashboard';
+}
+</script>
+
+<!-- JavaScript files -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='enhanced_scripts.js') }}"></script>
+</body>
+</html>

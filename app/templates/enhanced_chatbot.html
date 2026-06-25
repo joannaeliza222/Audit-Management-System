@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>AI Chatbot - Audit Management System v{{ cache_buster }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='enhanced_styles.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        :root { 
+            --brand: #1f6feb; 
+            --soft: #f6f8fa;
+            --user-bg: #e3f2fd;
+            --ai-bg: #f3e5f5;
+            --border: #e1e4e8;
+            --success: #28a745;
+            --warning: #ffc107;
+            --error: #dc3545;
+        }
+
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background-color: var(--soft); 
+            margin:0; 
+            height:100vh;
+            display:flex;
+            flex-direction:column;
+        }
+
+        .app-shell {min-height:100vh; display:flex; flex-direction:column;}
+        
+        /* Header */
+        .navbar {background:#003366;}
+        .navbar .nav-link, .navbar-brand {color:#fff!important;}
+        .nav-link.active {font-weight:600; text-decoration:underline; text-underline-offset:6px;}
+        
+        /* Chat Container */
+        .chat-container {
+            flex:1;
+            display:flex;
+            flex-direction:column;
+            max-width:1200px;
+            margin:0 auto;
+            width:100%;
+            padding:20px;
+            gap:20px;
+        }
+        
+        .chat-main {
+            flex:1;
+            display:flex;
+            flex-direction:column;
+            background:white;
+            border-radius:12px;
+            box-shadow:0 4px 20px rgba(0,0,0,0.08);
+            overflow:hidden;
+        }
+        
+        /* Chat Header */
+        .chat-header {
+            background:linear-gradient(135deg, #003366, #004080);
+            color:white;
+            padding:20px;
+            display:flex;
+            align-items:center;
+            gap:15px;
+            border-bottom:1px solid var(--border);
+        }
+        
+        .chat-header .status {
+            width:10px;
+            height:10px;
+            background:var(--success);
+            border-radius:50%;
+            animation:pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {opacity:1;}
+            50% {opacity:0.5;}
+        }
+        
+        /* Messages Area */
+        .messages-area {
+            flex:1;
+            overflow-y:auto;
+            padding:20px;
+            display:flex;
+            flex-direction:column;
+            gap:15px;
+            max-height:60vh;
+        }
+        
+        .message {
+            display:flex;
+            gap:12px;
+            animation:slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {opacity:0; transform:translateY(10px);}
+            to {opacity:1; transform:translateY(0);}
+        }
+        
+        .message.user {
+            flex-direction:row-reverse;
+        }
+        
+        .message-content {
+            max-width:70%;
+            padding:12px 16px;
+            border-radius:18px;
+            position:relative;
+            word-wrap:break-word;
+        }
+        
+        .message.user .message-content {
+            background:var(--brand);
+            color:white;
+            border-bottom-right-radius:4px;
+        }
+        
+        .message.ai .message-content {
+            background:var(--soft);
+            border:1px solid var(--border);
+            border-bottom-left-radius:4px;
+        }
+        
+        .message-avatar {
+            width:36px;
+            height:36px;
+            border-radius:50%;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:14px;
+            flex-shrink:0;
+        }
+        
+        .message.user .message-avatar {
+            background:var(--user-bg);
+            color:var(--brand);
+        }
+        
+        .message.ai .message-avatar {
+            background:var(--ai-bg);
+            color:#6c1cb8;
+        }
+        
+        .message-time {
+            font-size:11px;
+            opacity:0.7;
+            margin-top:4px;
+        }
+        
+        /* Sources */
+        .sources {
+            margin-top:8px;
+            padding:8px;
+            background:rgba(255,255,255,0.5);
+            border-radius:8px;
+            font-size:12px;
+        }
+        
+        .source-item {
+            display:flex;
+            align-items:center;
+            gap:6px;
+            margin-bottom:4px;
+        }
+        
+        .similarity-badge {
+            background:var(--success);
+            color:white;
+            padding:2px 6px;
+            border-radius:10px;
+            font-size:10px;
+        }
+        
+        /* Input Area */
+        .input-area {
+            padding:20px;
+            border-top:1px solid var(--border);
+            background:var(--soft);
+        }
+        
+        .input-container {
+            display:flex;
+            gap:12px;
+            align-items:flex-end;
+        }
+        
+        .message-input {
+            flex:1;
+            border:2px solid var(--border);
+            border-radius:24px;
+            padding:12px 20px;
+            resize:none;
+            font-family:inherit;
+            transition:border-color 0.3s;
+        }
+        
+        .message-input:focus {
+            outline:none;
+            border-color:var(--brand);
+        }
+        
+        .send-btn {
+            width:48px;
+            height:48px;
+            border-radius:50%;
+            border:none;
+            background:var(--brand);
+            color:white;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            transition:all 0.3s;
+            cursor:pointer;
+        }
+        
+        .send-btn:hover:not(:disabled) {
+            background:#0056b3;
+            transform:scale(1.05);
+        }
+        
+        .send-btn:disabled {
+            opacity:0.5;
+            cursor:not-allowed;
+        }
+        
+        /* Suggestions */
+        .suggestions {
+            padding:0 20px 10px;
+            display:flex;
+            gap:8px;
+            flex-wrap:wrap;
+        }
+        
+        .suggestion-chip {
+            background:white;
+            border:1px solid var(--border);
+            border-radius:16px;
+            padding:6px 12px;
+            font-size:13px;
+            cursor:pointer;
+            transition:all 0.2s;
+        }
+        
+        .suggestion-chip:hover {
+            background:var(--brand);
+            color:white;
+            border-color:var(--brand);
+        }
+        
+        /* Typing Indicator */
+        .typing-indicator {
+            display:flex;
+            gap:8px;
+            padding:16px;
+        }
+        
+        .typing-dot {
+            width:8px;
+            height:8px;
+            background:var(--border);
+            border-radius:50%;
+            animation:typing 1.4s infinite;
+        }
+        
+        .typing-dot:nth-child(2) {animation-delay:0.2s;}
+        .typing-dot:nth-child(3) {animation-delay:0.4s;}
+        
+        @keyframes typing {
+            0%, 60%, 100% {transform:translateY(0);}
+            30% {transform:translateY(-10px);}
+        }
+        
+        /* Error Toast */
+        .error-toast {
+            position:fixed;
+            top:20px;
+            right:20px;
+            background:var(--error);
+            color:white;
+            padding:12px 20px;
+            border-radius:8px;
+            box-shadow:0 4px 12px rgba(0,0,0,0.15);
+            z-index:1000;
+            animation:slideInRight 0.3s ease-out;
+        }
+        
+        @keyframes slideInRight {
+            from {opacity:0; transform:translateX(100%);}
+            to {opacity:1; transform:translateX(0);}
+        }
+        
+        /* Responsive */
+        @media (max-width:768px) {
+            .chat-container {padding:10px;}
+            .message-content {max-width:85%;}
+            .input-container {flex-direction:column;}
+            .send-btn {width:100%; border-radius:8px;}
+        }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg">
+            <div class="container-fluid">
+                <a class="navbar-brand text-white fw-bold" href="{{ url_for('auth.index') }}">
+                    <i class="bi bi-robot me-2"></i>AI Chatbot
+                </a>
+                <div class="navbar-nav ms-auto">
+                    <a class="nav-link" href="{{ url_for('auth.index') }}">
+                        <i class="bi bi-house me-1"></i>Home
+                    </a>
+                    <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                        <i class="bi bi-box-arrow-right me-1"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Chat Container -->
+        <div class="chat-container">
+            <div class="chat-main">
+                <!-- Chat Header -->
+                <div class="chat-header">
+                    <div class="status"></div>
+                    <div>
+                        <h5 class="mb-0">AI Assistant</h5>
+                        <small>Powered by Advanced RAG System</small>
+                    </div>
+                    <div class="ms-auto">
+                        <button class="btn btn-sm btn-outline-light" onclick="clearChat()">
+                            <i class="bi bi-trash me-1"></i>Clear
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Messages Area -->
+                <div class="messages-area" id="messagesArea">
+                    <div class="message ai">
+                        <div class="message-avatar">
+                            <i class="bi bi-robot"></i>
+                        </div>
+                        <div class="message-content">
+                            Hello! I'm your AI assistant. I can help you with questions about the Audit Management System. What would you like to know?
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Suggestions -->
+                <div class="suggestions" id="suggestions">
+                    <div class="suggestion-chip" onclick="sendSuggestion('How do I reset my password?')">
+                        How do I reset my password?
+                    </div>
+                    <div class="suggestion-chip" onclick="sendSuggestion('What is the audit process?')">
+                        What is the audit process?
+                    </div>
+                    <div class="suggestion-chip" onclick="sendSuggestion('How do I upload documents?')">
+                        How do I upload documents?
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div class="input-area">
+                    <div class="input-container">
+                        <textarea 
+                            class="message-input" 
+                            id="messageInput" 
+                            placeholder="Type your message here..."
+                            rows="1"
+                            maxlength="1000"
+                        ></textarea>
+                        <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                            <i class="bi bi-send-fill"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Force cache refresh
+        console.log('=== CHATBOT VERSION 2.0 - FIXED SUBSTRING ERROR ===');
+        console.log('Cache Buster:', '{{ cache_buster }}');
+        console.log('Timestamp:', new Date().toISOString());
+        
+        let sessionId = null;
+        let isTyping = false;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            const input = document.getElementById('messageInput');
+            
+            // Auto-resize textarea
+            input.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            });
+            
+            // Send on Enter (new line with Shift+Enter)
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            
+            // Focus input
+            input.focus();
+        });
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message || isTyping) return;
+            
+            // Add user message
+            addMessage('user', message);
+            input.value = '';
+            input.style.height = 'auto';
+            
+            // Show typing indicator
+            showTyping();
+            isTyping = true;
+            
+            try {
+                const response = await fetch('/api/chatbot/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        state_name: ''
+                    })
+                });
+                
+                console.log('Response Status:', response.status); // Debug log
+                console.log('Response Headers:', response.headers); // Debug log
+                
+                hideTyping();
+                isTyping = false;
+                
+                if (!response.ok) {
+                    console.error('HTTP Error:', response.status, response.statusText);
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                let data;
+                try {
+                    data = await response.json();
+                    console.log('=== COMPLETE API RESPONSE ===');
+                    console.log('Full response object:', data);
+                    console.log('Response keys:', Object.keys(data));
+                    console.log('Response type:', typeof data);
+                    console.log('Sources:', data.sources);
+                    console.log('Sources type:', typeof data.sources);
+                    console.log('Suggestions:', data.suggestions);
+                    console.log('Suggestions type:', typeof data.suggestions);
+                    console.log('=== END API RESPONSE ===');
+                } catch (jsonError) {
+                    console.error('JSON Parse Error:', jsonError);
+                    const responseText = await response.text();
+                    console.error('Raw Response Text:', responseText);
+                    throw new Error('Invalid JSON response from server');
+                }
+                
+                // Check for API error
+                if (data.error) {
+                    console.log('API Error:', data.error); // Debug log
+                    showError(data.error);
+                    return;
+                }
+                
+                // Validate response has required fields
+                if (!data.response) {
+                    console.error('Missing response field in:', data);
+                    showError('Invalid response format from server');
+                    return;
+                }
+                
+                // Add AI response with sources
+                addMessage('ai', data.response, data.sources || []);
+                if (data.session_id) {
+                    sessionId = data.session_id;
+                }
+                
+                // Update suggestions
+                updateSuggestions(message);
+                
+            } catch (error) {
+                console.error('JavaScript Error:', error); // Debug log
+                hideTyping();
+                isTyping = false;
+                showError('Failed to send message. Please try again. Error: ' + error.message);
+            }
+        }
+
+        function addMessage(type, content, sources = null) {
+            const messagesArea = document.getElementById('messagesArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            const avatar = type === 'user' ? 
+                '<i class="bi bi-person-fill"></i>' : 
+                '<i class="bi bi-robot"></i>';
+            
+            let sourcesHtml = '';
+            if (sources && sources.length > 0) {
+                console.log('Sources array:', sources);
+                console.log('Sources type:', typeof sources);
+                console.log('Sources length:', sources.length);
+                
+                // Filter out undefined/null sources
+                const validSources = sources.filter(source => source !== undefined && source !== null);
+                console.log('Valid sources after filtering:', validSources);
+                console.log('Valid sources length:', validSources.length);
+                
+                if (validSources.length > 0) {
+                    sourcesHtml = '<div class="sources">';
+                    sourcesHtml += '<strong>Sources:</strong>';
+                    validSources.forEach((source, index) => {
+                    try {
+                        console.log(`Source ${index}:`, source, 'Type:', typeof source);
+                        
+                        // Check if source is undefined or null
+                        if (source === undefined || source === null) {
+                            console.log(`Source ${index} is undefined/null, skipping`);
+                            return; // Skip this source
+                        }
+                        
+                        console.log(`Source ${index} keys:`, source ? Object.keys(source) : 'N/A');
+                        
+                        // Handle both string sources and object sources
+                        const sourceName = typeof source === 'string' ? source : (source.question || 'Unknown source');
+                        const similarity = typeof source === 'object' && source.similarity ? (source.similarity * 100).toFixed(0) : null;
+                        
+                        console.log('Source name:', sourceName, 'Similarity:', similarity);
+                        
+                        if (sourceName && typeof sourceName === 'string') {
+                            sourcesHtml += `
+                                <div class="source-item">
+                                    <i class="bi bi-database"></i>
+                                    <span>${sourceName.substring(0, 50)}...</span>
+                                    ${similarity ? `<span class="similarity-badge">${similarity}%</span>` : ''}
+                                </div>
+                            `;
+                        } else {
+                            console.log('Invalid source name:', sourceName);
+                            sourcesHtml += `
+                                <div class="source-item">
+                                    <i class="bi bi-database"></i>
+                                    <span>Unknown source...</span>
+                                </div>
+                            `;
+                        }
+                    } catch (error) {
+                        console.error('Error processing source:', error, 'Source:', source);
+                        sourcesHtml += `
+                            <div class="source-item">
+                                <i class="bi bi-database"></i>
+                                <span>Error loading source...</span>
+                            </div>
+                        `;
+                    }
+                });
+                sourcesHtml += '</div>';
+                } else {
+                    console.log('No valid sources to display');
+                }
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${avatar}</div>
+                <div class="message-content">
+                    <div>${content}</div>
+                    <div class="message-time">${new Date().toLocaleTimeString()}</div>
+                    ${sourcesHtml}
+                </div>
+            `;
+            
+            messagesArea.appendChild(messageDiv);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+
+        function showTyping() {
+            const messagesArea = document.getElementById('messagesArea');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message ai';
+            typingDiv.id = 'typingIndicator';
+            typingDiv.innerHTML = `
+                <div class="message-avatar">
+                    <i class="bi bi-robot"></i>
+                </div>
+                <div class="typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            `;
+            messagesArea.appendChild(typingDiv);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+
+        function hideTyping() {
+            const typingIndicator = document.getElementById('typingIndicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        function sendSuggestion(message) {
+            document.getElementById('messageInput').value = message;
+            sendMessage();
+        }
+
+        async function updateSuggestions(query) {
+            try {
+                const response = await fetch('/api/chatbot/suggestions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        partial: query,
+                        state_name: '{{ session.get("state_name", "") }}'
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.suggestions && data.suggestions.length > 0) {
+                        console.log('Processing suggestions:', data.suggestions);
+                        const suggestionsDiv = document.getElementById('suggestions');
+                        suggestionsDiv.innerHTML = data.suggestions.slice(0, 3).map(s => {
+                            try {
+                                console.log('Processing suggestion:', s, 'Type:', typeof s);
+                                const suggestionText = typeof s === 'string' ? s : (s.question || s);
+                                console.log('Suggestion text:', suggestionText);
+                                
+                                if (suggestionText && typeof suggestionText === 'string') {
+                                    return `
+                                        <div class="suggestion-chip" onclick="sendSuggestion('${suggestionText.replace(/'/g, "\\'")}')">
+                                            ${suggestionText.substring(0, 40)}...
+                                        </div>
+                                    `;
+                                } else {
+                                    return `
+                                        <div class="suggestion-chip" onclick="sendSuggestion('Suggestion')">
+                                            Suggestion...
+                                        </div>
+                                    `;
+                                }
+                            } catch (error) {
+                                console.error('Error processing suggestion:', error, 'Suggestion:', s);
+                                return `
+                                    <div class="suggestion-chip" onclick="sendSuggestion('Error')">
+                                        Error...
+                                    </div>
+                                `;
+                            }
+                        }).join('');
+                    }
+                }
+            } catch (error) {
+                // Silently fail for suggestions
+            }
+        }
+
+        async function clearChat() {
+            try {
+                await fetch('/api/chatbot/chat/clear', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                // Clear messages area
+                const messagesArea = document.getElementById('messagesArea');
+                messagesArea.innerHTML = `
+                    <div class="message ai">
+                        <div class="message-avatar">
+                            <i class="bi bi-robot"></i>
+                        </div>
+                        <div class="message-content">
+                            Hello! I'm your AI assistant. How can I help you today?
+                        </div>
+                    </div>
+                `;
+                
+                // Reset suggestions
+                document.getElementById('suggestions').innerHTML = `
+                    <div class="suggestion-chip" onclick="sendSuggestion('How do I reset my password?')">
+                        How do I reset my password?
+                    </div>
+                    <div class="suggestion-chip" onclick="sendSuggestion('What is the audit process?')">
+                        What is the audit process?
+                    </div>
+                    <div class="suggestion-chip" onclick="sendSuggestion('How do I upload documents?')">
+                        How do I upload documents?
+                    </div>
+                `;
+                
+                sessionId = null;
+                
+            } catch (error) {
+                showError('Failed to clear chat');
+            }
+        }
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-toast';
+            errorDiv.innerHTML = `
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                ${message}
+            `;
+            document.body.appendChild(errorDiv);
+            
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- CSRF disabled globally for chatbot API compatibility -->
+  <title>Audit Management System</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='enhanced_styles.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <style>
+    .main-content {
+      margin-top: 30px;
+    }
+
+    input, select {
+      width: 100%;
+      margin-bottom: 12px;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+
+  </style>
+</head>
+
+<body>
+
+<div class="app-shell">
+
+  <!-- Enhanced Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand text-white fw-bold" href="{{ url_for('enhanced_frontend.enhanced_index') }}">
+        <img class="logo-box" src="{{ url_for('static', filename='logo.png') }}" height="32" class="me-2" style="background-color: white; padding: 4px; border-radius: 4px;"> Audit Management System
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="bi bi-clipboard-data"></i> Query Management
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('enhanced_frontend.create_query') }}">
+                <i class="bi bi-plus-circle"></i> Create Query
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('pending.pending') }}">
+                <i class="bi bi-hourglass-split"></i> Pending Queries
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('replied.replied') }}">
+                <i class="bi bi-search"></i> Search Queries
+              </a></li>
+              {% if role == 'admin' %}
+              <li><a class="dropdown-item" href="{{ url_for('review.review_drafts') }}">
+                <i class="bi bi-book"></i> Review Answers
+              </a></li>
+              {% endif %}
+            </ul>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('futurefix.future_issues') }}">
+              <i class="bi bi-tools"></i> Upcoming Version Fixes
+            </a>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="bi bi-graph-up"></i> Analytics
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('audit_analytics.audit_analytics') }}">
+                <i class="bi bi-bar-chart"></i> Audit Analytics
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="showDataDumpAnalytics()">
+                <i class="bi bi-database"></i> Data Dump Analytics
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="showAIAnalytics()">
+                <i class="bi bi-cpu"></i> AI Performance
+              </a></li>
+            </ul>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="bi bi-file-text"></i> Documents
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="#" onclick="showDocumentUpload()">
+                <i class="bi bi-upload"></i> Upload Document
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="showKnowledgeBase()">
+                <i class="bi bi-journal-text"></i> Knowledge Base
+              </a></li>
+            </ul>
+          </li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}">
+            <i class="bi bi-box-arrow-right"></i> Logout
+          </a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="container mt-3" style="position: fixed;
+            top: 35px;left: 50%;
+            transform: translateX(-50%);
+            z-index: 2000;width: 40%;text-align: center;">
+        {% for category, message in messages %}
+          <div class="alert alert-{{ 'warning' if category == 'warn' else category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- Main Body -->
+  <main class="container my-4">
+
+    <div class="row">
+      <div class="col-12">
+        <div class="card shadow-sm p-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="m-0"><i class="fa fa-search me-2"></i> Search Queries (Semantic Search Enabled)</h2>
+            <a href="{{ url_for('enhanced_frontend.enhanced_index') }}" class="btn btn-secondary">Back to Dashboard</a>
+          </div>
+          
+          <!-- Search Form -->
+          <form method="POST" action="{{ url_for('replied.replied') }}">
+            <!-- CSRF disabled globally for chatbot API compatibility -->
+            <div class="mb-3">
+              <label for="subject" class="form-label">Context Search</label>
+              <input type="text" name="subject" placeholder="Search for context related query..." class="form-control" value="{{ request.form.get('subject', '') }}">
+              <div class="form-text">Enter keywords or phrases to find related queries</div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="memo_id" class="form-label">Memo ID</label>
+                  <input type="text" name="memo_id" placeholder="Search by Memo ID..." class="form-control" value="{{ request.form.get('memo_id', '') }}">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="state_name" class="form-label">State Name</label>
+                  <select name="state_name" class="form-select">
+                    <option value="">All States</option>
+                    {% for state in distinct_states %}
+                      <option value="{{ state[0] }}" {% if request.form.get('state_name') == state[0] %}selected{% endif %}>{{ state[0] }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-primary">
+                <i class="fa fa-search"></i> Search
+              </button>
+              <button type="button" class="btn btn-outline-secondary" onclick="clearFields()">Clear</button>
+            </div>
+          </form>
+          
+          {% if search_performed %}
+          <div class="alert alert-info mt-3">
+            <i class="fa fa-info-circle"></i> 
+            Showing {{ related_count }} results
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </main>
+
+  {% if search_performed and related_questions %}
+  <div class="container">
+    <div class="card shadow-sm p-4">
+      <div class="mt-1">
+        {% for subject, reply, memo_id, state_name in related_questions %}
+          <div class="related-question">
+            <p><strong>Subject:</strong> {{ subject }}</p>
+            <p><strong>Reply:</strong> {{ reply }}</p>
+            <p><strong>Memo ID:</strong> {{ memo_id }}</p>
+            <p><strong>State:</strong> {{ state_name }}</p>
+          </div>
+        {% endfor %}
+      </div>
+
+    </div>
+  </div>
+  {% endif %}
+
+
+  <!-- Footer -->
+  <footer class="text-light py-4 mt-4" style="background-color: #003366;">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4 small">Designed and Developed by Jo</div>
+        <div class="col-md-4 text-center">
+          <a href="#" class="text-light">Version 1.0</a>
+        </div>
+        <div class="col-md-4 text-end">
+          <a href="#" class="text-light me-3">Contact Us</a>
+        </div>
+      </div>
+      <hr class="border-light">
+      <p class="text-center small mb-0">&copy; 2025 GePNIC. </p>
+    </div>
+  </footer>
+</div>
+
+<script>
+  function clearFields() {
+    document.querySelectorAll('input[type="text"], textarea, select').forEach(el => el.value = '');
+
+    const relatedQuestionsBox = document.querySelector(".mt-3");
+    if (relatedQuestionsBox) relatedQuestionsBox.innerHTML = "";
+    window.location.href = "{{ url_for('replied.replied') }}";
+  }
+</script>
+
+</body>
+</html>

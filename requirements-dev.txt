@@ -1,0 +1,16 @@
+# Development Requirements for AMS
+# Testing and development tools only
+
+# Testing
+pytest==7.4.0
+pytest-flask==1.2.0
+pytest-cov==4.1.0
+
+# Code Quality
+black==23.7.0
+flake8==6.1.0
+autoflake==2.2.0
+
+# Security Auditing
+pip-audit==2.6.0
+safety==2.3.0

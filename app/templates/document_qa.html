@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Q&A - AMS</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='css/enhanced_styles.css') }}" rel="stylesheet">
+    
+    <style>
+        .upload-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .upload-area:hover {
+            border-color: #0d6efd;
+            background-color: #f8f9fa;
+        }
+        
+        .upload-area.dragover {
+            border-color: #0d6efd;
+            background-color: #e7f1ff;
+        }
+        
+        .document-card {
+            transition: transform 0.2s ease;
+        }
+        
+        .document-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .status-badge {
+            font-size: 0.75rem;
+        }
+        
+        .chat-container {
+            height: 500px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 10px;
+            max-width: 80%;
+        }
+        
+        .message.user {
+            background-color: #0d6efd;
+            color: white;
+            margin-left: auto;
+        }
+        
+        .message.assistant {
+            background-color: white;
+            border: 1px solid #dee2e6;
+        }
+        
+        .confidence-indicator {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+        
+        .source-chip {
+            display: inline-block;
+            background-color: #e9ecef;
+            border-radius: 15px;
+            padding: 2px 10px;
+            font-size: 0.75rem;
+            margin: 2px;
+        }
+        
+        .typing-indicator {
+            display: none;
+            padding: 10px 15px;
+            background-color: white;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            max-width: 80%;
+        }
+        
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #6c757d;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-10px);
+            }
+        }
+        
+        .progress-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('enhanced_frontend.dashboard') }}">
+                <i class="bi bi-file-text"></i> AMS Document Q&A
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('enhanced_frontend.dashboard') }}">
+                    <i class="bi bi-house"></i> Dashboard
+                </a>
+                <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Stats Section -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-file-text"></i> Total Documents</h5>
+                        <h2 id="total-documents">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-check-circle"></i> Ready</h5>
+                        <h2 id="ready-documents">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-hourglass-split"></i> Processing</h5>
+                        <h2 id="processing-documents">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-chat-dots"></i> Q&A Sessions</h5>
+                        <h2 id="qa-sessions">0</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-cloud-upload"></i> Upload Document</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="upload-area" id="uploadArea">
+                            <i class="bi bi-cloud-upload fs-1 text-muted"></i>
+                            <h4 class="mt-3">Drop files here or click to browse</h4>
+                            <p class="text-muted">Supported formats: PDF, DOCX, DOC, TXT, MD, PNG, JPG, JPEG, TIFF, BMP</p>
+                            <p class="text-muted">Maximum file size: 50MB</p>
+                            <input type="file" id="fileInput" accept=".pdf,.docx,.doc,.txt,.md,.png,.jpg,.jpeg,.tiff,.bmp" hidden>
+                        </div>
+                        <div id="uploadProgress" class="mt-3" style="display: none;">
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documents List -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5><i class="bi bi-folder"></i> My Documents</h5>
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-sm btn-outline-primary" onclick="refreshDocuments()">
+                                <i class="bi bi-arrow-clockwise"></i> Refresh
+                            </button>
+                            <select class="form-select form-select-sm" id="statusFilter" onchange="filterDocuments()">
+                                <option value="">All Status</option>
+                                <option value="uploading">Uploading</option>
+                                <option value="processing">Processing</option>
+                                <option value="ready">Ready</option>
+                                <option value="failed">Failed</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="documentsList" class="row">
+                            <!-- Documents will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Q&A Modal -->
+    <div class="modal fade" id="qaModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-chat-dots"></i> 
+                        <span id="qaDocumentTitle">Document Q&A</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="chat-container">
+                                <div class="chat-messages" id="chatMessages">
+                                    <!-- Chat messages will appear here -->
+                                </div>
+                                <div class="typing-indicator" id="typingIndicator">
+                                    <div class="typing-dots">
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6><i class="bi bi-gear"></i> Settings</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">LLM Model</label>
+                                        <select class="form-select" id="llmModel">
+                                            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                            <option value="gpt-4">GPT-4</option>
+                                            <option value="claude-3-sonnet">Claude 3 Sonnet</option>
+                                            <option value="local">Local Processing</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Session Name</label>
+                                        <input type="text" class="form-control" id="sessionName" placeholder="Optional session name">
+                                    </div>
+                                    <button class="btn btn-primary w-100" onclick="startNewSession()">
+                                        <i class="bi bi-plus-circle"></i> New Session
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    <h6><i class="bi bi-clock-history"></i> Conversation History</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div id="conversationHistory" style="max-height: 200px; overflow-y: auto;">
+                                        <!-- Conversation history will appear here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="questionInput" placeholder="Ask a question about the document..." onkeypress="handleQuestionKeyPress(event)">
+                        <button class="btn btn-primary" onclick="askQuestion()">
+                            <i class="bi bi-send"></i> Ask
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        let currentDocumentId = null;
+        let currentSessionId = null;
+        let qaModal = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            qaModal = new bootstrap.Modal(document.getElementById('qaModal'));
+            loadStats();
+            loadDocuments();
+            setupUploadArea();
+        });
+
+        // Setup upload area
+        function setupUploadArea() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+
+            uploadArea.addEventListener('click', () => fileInput.click());
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                handleFiles(e.dataTransfer.files);
+            });
+            
+            fileInput.addEventListener('change', (e) => {
+                handleFiles(e.target.files);
+            });
+        }
+
+        // Handle file upload
+        async function handleFiles(files) {
+            if (files.length === 0) return;
+            
+            const file = files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            // Show progress
+            const progressDiv = document.getElementById('uploadProgress');
+            const progressBar = progressDiv.querySelector('.progress-bar');
+            progressDiv.style.display = 'block';
+            
+            try {
+                const response = await fetch('/api/documents/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showAlert('Document uploaded successfully!', 'success');
+                    loadDocuments();
+                    loadStats();
+                } else {
+                    showAlert(result.error || 'Upload failed', 'danger');
+                }
+            } catch (error) {
+                showAlert('Upload failed: ' + error.message, 'danger');
+            } finally {
+                progressDiv.style.display = 'none';
+                progressBar.style.width = '0%';
+            }
+        }
+
+        // Load statistics
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/documents/stats');
+                const stats = await response.json();
+                
+                document.getElementById('total-documents').textContent = stats.documents.total;
+                document.getElementById('ready-documents').textContent = stats.documents.ready;
+                document.getElementById('processing-documents').textContent = stats.documents.processing;
+                document.getElementById('qa-sessions').textContent = stats.qa_sessions.total;
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+            }
+        }
+
+        // Load documents
+        async function loadDocuments(status = '') {
+            try {
+                const url = status ? `/api/documents?status=${status}` : '/api/documents';
+                const response = await fetch(url);
+                const documents = await response.json();
+                
+                const documentsList = document.getElementById('documentsList');
+                documentsList.innerHTML = '';
+                
+                if (documents.documents.length === 0) {
+                    documentsList.innerHTML = '<div class="col-12"><p class="text-muted text-center">No documents found</p></div>';
+                    return;
+                }
+                
+                documents.documents.forEach(doc => {
+                    const docCard = createDocumentCard(doc);
+                    documentsList.appendChild(docCard);
+                });
+            } catch (error) {
+                console.error('Failed to load documents:', error);
+            }
+        }
+
+        // Create document card
+        function createDocumentCard(doc) {
+            const col = document.createElement('div');
+            col.className = 'col-md-4 mb-3';
+            
+            const statusClass = getStatusClass(doc.status);
+            const statusIcon = getStatusIcon(doc.status);
+            
+            col.innerHTML = `
+                <div class="card document-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="card-title text-truncate">${doc.original_filename}</h6>
+                            <span class="badge ${statusClass} status-badge">
+                                <i class="bi ${statusIcon}"></i> ${doc.status}
+                            </span>
+                        </div>
+                        <p class="card-text text-muted small">
+                            <i class="bi bi-file-earmark"></i> ${formatFileSize(doc.file_size)}
+                            ${doc.word_count ? `<br><i class="bi bi-type"></i> ${doc.word_count} words` : ''}
+                            ${doc.page_count ? `<br><i class="bi bi-file-earmark-text"></i> ${doc.page_count} pages` : ''}
+                        </p>
+                        <div class="btn-group w-100" role="group">
+                            ${doc.status === 'ready' ? 
+                                `<button class="btn btn-primary btn-sm" onclick="openQA(${doc.id}, '${doc.original_filename}')">
+                                    <i class="bi bi-chat-dots"></i> Q&A
+                                </button>` : ''}
+                            <button class="btn btn-outline-secondary btn-sm" onclick="viewDocument(${doc.id})">
+                                <i class="bi bi-eye"></i> View
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm" onclick="deleteDocument(${doc.id})">
+                                <i class="bi bi-trash"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-footer text-muted small">
+                        <i class="bi bi-clock"></i> ${formatDate(doc.created_at)}
+                    </div>
+                </div>
+            `;
+            
+            return col;
+        }
+
+        // Open Q&A modal
+        async function openQA(documentId, filename) {
+            currentDocumentId = documentId;
+            document.getElementById('qaDocumentTitle').textContent = filename;
+            
+            // Create new session
+            await startNewSession();
+            
+            qaModal.show();
+        }
+
+        // Start new Q&A session
+        async function startNewSession() {
+            if (!currentDocumentId) return;
+            
+            try {
+                const sessionName = document.getElementById('sessionName').value;
+                const response = await fetch(`/api/documents/${currentDocumentId}/qa-session`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ session_name: sessionName })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    currentSessionId = result.session.id;
+                    document.getElementById('chatMessages').innerHTML = '';
+                    document.getElementById('conversationHistory').innerHTML = '';
+                    showAlert('Q&A session started', 'success');
+                } else {
+                    showAlert(result.error || 'Failed to start session', 'danger');
+                }
+            } catch (error) {
+                showAlert('Failed to start session: ' + error.message, 'danger');
+            }
+        }
+
+        // Ask question
+        async function askQuestion() {
+            const questionInput = document.getElementById('questionInput');
+            const question = questionInput.value.trim();
+            
+            if (!question || !currentSessionId) return;
+            
+            // Add user message
+            addMessage('user', question);
+            questionInput.value = '';
+            
+            // Show typing indicator
+            document.getElementById('typingIndicator').style.display = 'block';
+            
+            try {
+                const model = document.getElementById('llmModel').value;
+                const response = await fetch(`/api/qa-sessions/${currentSessionId}/ask`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ question, model })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    addMessage('assistant', result.answer, result.confidence, result.sources);
+                    loadConversationHistory();
+                } else {
+                    addMessage('assistant', 'Error: ' + result.error, 0);
+                }
+            } catch (error) {
+                addMessage('assistant', 'Error: ' + error.message, 0);
+            } finally {
+                document.getElementById('typingIndicator').style.display = 'none';
+            }
+        }
+
+        // Add message to chat
+        function addMessage(sender, text, confidence = null, sources = []) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            let messageHTML = text;
+            
+            if (sender === 'assistant' && confidence !== null) {
+                messageHTML += `<div class="confidence-indicator mt-2">
+                    <i class="bi bi-speedometer2"></i> Confidence: ${Math.round(confidence * 100)}%
+                </div>`;
+            }
+            
+            if (sources && sources.length > 0) {
+                messageHTML += '<div class="mt-2">';
+                sources.forEach(source => {
+                    messageHTML += `<span class="source-chip">Source ${source.chunk_id}</span>`;
+                });
+                messageHTML += '</div>';
+            }
+            
+            messageDiv.innerHTML = messageHTML;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // Load conversation history
+        async function loadConversationHistory() {
+            if (!currentSessionId) return;
+            
+            try {
+                const response = await fetch(`/api/qa-sessions/${currentSessionId}/conversations`);
+                const conversations = await response.json();
+                
+                const historyDiv = document.getElementById('conversationHistory');
+                historyDiv.innerHTML = '';
+                
+                conversations.conversations.forEach(conv => {
+                    const item = document.createElement('div');
+                    item.className = 'mb-2 p-2 border rounded';
+                    item.innerHTML = `
+                        <div class="small text-muted">${formatDate(conv.created_at)}</div>
+                        <div class="small"><strong>Q:</strong> ${conv.question.substring(0, 50)}...</div>
+                        <div class="small"><strong>A:</strong> ${conv.answer.substring(0, 50)}...</div>
+                    `;
+                    historyDiv.appendChild(item);
+                });
+            } catch (error) {
+                console.error('Failed to load conversation history:', error);
+            }
+        }
+
+        // Handle question input key press
+        function handleQuestionKeyPress(event) {
+            if (event.key === 'Enter') {
+                askQuestion();
+            }
+        }
+
+        // View document details
+        async function viewDocument(documentId) {
+            try {
+                const response = await fetch(`/api/documents/${documentId}`);
+                const document = await response.json();
+                
+                if (response.ok) {
+                    // Show document details in a modal or alert
+                    const details = `
+                        Filename: ${document.document.original_filename}
+                        Size: ${formatFileSize(document.document.file_size)}
+                        Status: ${document.document.status}
+                        Pages: ${document.document.page_count || 'N/A'}
+                        Words: ${document.document.word_count || 'N/A'}
+                        Created: ${formatDate(document.document.created_at)}
+                    `;
+                    alert(details);
+                } else {
+                    showAlert(document.error || 'Failed to load document', 'danger');
+                }
+            } catch (error) {
+                showAlert('Failed to load document: ' + error.message, 'danger');
+            }
+        }
+
+        // Delete document
+        async function deleteDocument(documentId) {
+            if (!confirm('Are you sure you want to delete this document?')) return;
+            
+            try {
+                const response = await fetch(`/api/documents/${documentId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showAlert('Document deleted successfully', 'success');
+                    loadDocuments();
+                    loadStats();
+                } else {
+                    showAlert(result.error || 'Failed to delete document', 'danger');
+                }
+            } catch (error) {
+                showAlert('Failed to delete document: ' + error.message, 'danger');
+            }
+        }
+
+        // Filter documents
+        function filterDocuments() {
+            const status = document.getElementById('statusFilter').value;
+            loadDocuments(status);
+        }
+
+        // Refresh documents
+        function refreshDocuments() {
+            loadDocuments();
+            loadStats();
+        }
+
+        // Utility functions
+        function getStatusClass(status) {
+            const classes = {
+                'uploading': 'bg-secondary',
+                'processing': 'bg-warning',
+                'ready': 'bg-success',
+                'failed': 'bg-danger',
+                'deleted': 'bg-dark'
+            };
+            return classes[status] || 'bg-secondary';
+        }
+
+        function getStatusIcon(status) {
+            const icons = {
+                'uploading': 'bi-cloud-upload',
+                'processing': 'bi-hourglass-split',
+                'ready': 'bi-check-circle',
+                'failed': 'bi-x-circle',
+                'deleted': 'bi-trash'
+            };
+            return icons[status] || 'bi-file';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString();
+        }
+
+        function showAlert(message, type) {
+            // Simple alert - could be enhanced with toast notifications
+            console.log(`${type.toUpperCase()}: ${message}`);
+        }
+    </script>
+</body>
+</html>

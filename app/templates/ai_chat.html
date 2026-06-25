@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant - Audit Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='enhanced_styles.css') }}">
+    <style>
+        :root { 
+            --brand: #1f6feb; 
+            --soft: #f6f8fa;
+            --user-bg: #e3f2fd;
+            --ai-bg: #f3e5f5;
+            --border: #e1e4e8;
+        }
+
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background-color: var(--soft); 
+            margin:0; 
+            height:100vh;
+            display:flex;
+            flex-direction:column;
+        }
+
+        .app-shell {min-height:100vh; display:flex; flex-direction:column;}
+        
+        /* Header */
+        .navbar {background:#003366;}
+        .navbar .nav-link, .navbar-brand {color:#fff!important;}
+        .nav-link.active {font-weight:600; text-decoration:underline; text-underline-offset:6px;}
+        
+        /* Chat Container */
+        .chat-container {
+            flex:1;
+            display:flex;
+            flex-direction:column;
+            max-width:1200px;
+            margin:0 auto;
+            width:100%;
+            padding:20px;
+            gap:20px;
+        }
+        
+        .chat-main {
+            flex:1;
+            display:flex;
+            flex-direction:column;
+            background:#fff;
+            border-radius:1rem;
+            box-shadow:0 4px 12px rgba(0,0,0,0.1);
+            overflow:hidden;
+        }
+        
+        .chat-header {
+            padding:20px;
+            background:linear-gradient(135deg, var(--brand), #2c5282);
+            color:white;
+            border-bottom:1px solid var(--border);
+        }
+        
+        .chat-messages {
+            flex:1;
+            overflow-y:auto;
+            padding:20px;
+            background:#fafbfc;
+            max-height:500px;
+        }
+        
+        .chat-input-container {
+            padding:20px;
+            background:#fff;
+            border-top:1px solid var(--border);
+        }
+        
+        /* Message Styles */
+        .message {
+            margin-bottom:15px;
+            display:flex;
+            align-items:flex-start;
+            gap:12px;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity:0; transform:translateY(10px); }
+            to { opacity:1; transform:translateY(0); }
+        }
+        
+        .message-avatar {
+            width:40px;
+            height:40px;
+            border-radius:50%;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-weight:600;
+            font-size:14px;
+            flex-shrink:0;
+        }
+        
+        .user-avatar {
+            background:var(--user-bg);
+            color:#1976d2;
+        }
+        
+        .ai-avatar {
+            background:var(--ai-bg);
+            color:#7b1fa2;
+        }
+        
+        .message-content {
+            flex:1;
+            max-width:70%;
+        }
+        
+        .message-bubble {
+            padding:12px 16px;
+            border-radius:18px;
+            word-wrap:break-word;
+            position:relative;
+        }
+        
+        .user-message .message-bubble {
+            background:var(--brand);
+            color:white;
+            margin-left:auto;
+            border-bottom-right-radius:4px;
+        }
+        
+        .ai-message .message-bubble {
+            background:#f1f3f4;
+            color:#24292f;
+            border-bottom-left-radius:4px;
+            border:1px solid var(--border);
+        }
+        
+        .message-meta {
+            font-size:11px;
+            color:#6a737d;
+            margin-top:4px;
+            display:flex;
+            align-items:center;
+            gap:8px;
+        }
+        
+        .user-message .message-meta {
+            justify-content:flex-end;
+        }
+        
+        .confidence-badge {
+            background:var(--brand);
+            color:white;
+            padding:2px 6px;
+            border-radius:10px;
+            font-size:10px;
+            font-weight:600;
+        }
+        
+        .source-indicator {
+            background:#28a745;
+            color:white;
+            padding:2px 6px;
+            border-radius:10px;
+            font-size:10px;
+        }
+        
+        /* Input Area */
+        .chat-input-wrapper {
+            display:flex;
+            gap:12px;
+            align-items:flex-end;
+        }
+        
+        .chat-input {
+            flex:1;
+            border:2px solid var(--border);
+            border-radius:25px;
+            padding:12px 20px;
+            font-size:14px;
+            resize:none;
+            transition:border-color 0.3s ease;
+        }
+        
+        .chat-input:focus {
+            outline:none;
+            border-color:var(--brand);
+        }
+        
+        .chat-send-btn {
+            width:48px;
+            height:48px;
+            border-radius:50%;
+            border:none;
+            background:var(--brand);
+            color:white;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            cursor:pointer;
+            transition:all 0.3s ease;
+        }
+        
+        .chat-send-btn:hover {
+            background:#1a5fb4;
+            transform:scale(1.05);
+        }
+        
+        .chat-send-btn:disabled {
+            background:#ccc;
+            cursor:not-allowed;
+            transform:none;
+        }
+        
+        /* Sidebar */
+        .chat-sidebar {
+            width:300px;
+            display:flex;
+            flex-direction:column;
+            gap:20px;
+        }
+        
+        .info-card {
+            background:#fff;
+            border-radius:1rem;
+            padding:20px;
+            box-shadow:0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .info-card h6 {
+            color:var(--brand);
+            font-weight:600;
+            margin-bottom:15px;
+        }
+        
+        .feature-list {
+            list-style:none;
+            padding:0;
+            margin:0;
+        }
+        
+        .feature-list li {
+            padding:8px 0;
+            border-bottom:1px solid var(--border);
+            font-size:13px;
+            display:flex;
+            align-items:center;
+            gap:8px;
+        }
+        
+        .feature-list li:last-child {
+            border-bottom:none;
+        }
+        
+        .feature-list i {
+            color:var(--brand);
+            font-size:16px;
+        }
+        
+        /* Quick Actions */
+        .quick-actions {
+            display:flex;
+            flex-wrap:wrap;
+            gap:8px;
+            margin-top:15px;
+        }
+        
+        .quick-action-btn {
+            background:#f1f3f4;
+            border:1px solid var(--border);
+            border-radius:20px;
+            padding:6px 12px;
+            font-size:12px;
+            cursor:pointer;
+            transition:all 0.3s ease;
+        }
+        
+        .quick-action-btn:hover {
+            background:var(--brand);
+            color:white;
+            border-color:var(--brand);
+        }
+        
+        /* Typing Indicator */
+        .typing-indicator {
+            display:flex;
+            align-items:center;
+            gap:4px;
+            padding:12px 16px;
+            background:#f1f3f4;
+            border-radius:18px;
+            border-bottom-left-radius:4px;
+            border:1px solid var(--border);
+        }
+        
+        .typing-dot {
+            width:8px;
+            height:8px;
+            background:#6a737d;
+            border-radius:50%;
+            animation:typing 1.4s infinite;
+        }
+        
+        .typing-dot:nth-child(2) { animation-delay:0.2s; }
+        .typing-dot:nth-child(3) { animation-delay:0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform:scale(1); opacity:0.5; }
+            30% { transform:scale(1.2); opacity:1; }
+        }
+        
+        /* Responsive */
+        @media (max-width:768px) {
+            .chat-container {
+                flex-direction:column;
+                padding:10px;
+            }
+            
+            .chat-sidebar {
+                width:100%;
+                order:2;
+            }
+            
+            .chat-main {
+                order:1;
+            }
+            
+            .message-content {
+                max-width:85%;
+            }
+        }
+        
+        /* Loading State */
+        .loading-overlay {
+            position:fixed;
+            top:0;
+            left:0;
+            right:0;
+            bottom:0;
+            background:rgba(255,255,255,0.9);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            z-index:9999;
+        }
+        
+        .spinner {
+            width:40px;
+            height:40px;
+            border:4px solid var(--border);
+            border-top:4px solid var(--brand);
+            border-radius:50%;
+            animation:spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform:rotate(0deg); }
+            100% { transform:rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+<div class="app-shell">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <a class="navbar-brand text-white fw-bold" href="{{ url_for('auth.index') }}">
+                <i class="bi bi-robot me-2"></i>AI Assistant
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.index') }}">Home</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{{ url_for('ai_assistant.chat') }}">AI Assistant</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="chat-container">
+        <!-- Sidebar -->
+        <div class="chat-sidebar">
+
+            <!-- Quick Actions -->
+            <div class="info-card">
+                <h6><i class="bi bi-lightning-charge me-2"></i>Quick Actions</h6>
+                <div class="quick-actions">
+                    <button class="quick-action-btn" onclick="askQuestion('technical issue')">
+                        <i class="bi bi-bug"></i> Technical Issue
+                    </button>
+                    <button class="quick-action-btn" onclick="askQuestion('process help')">
+                        <i class="bi bi-gear"></i> Process Help
+                    </button>
+                    <button class="quick-action-btn" onclick="askQuestion('policy question')">
+                        <i class="bi bi-file-text"></i> Policy
+                    </button>
+                    <button class="quick-action-btn" onclick="askQuestion('export faq data')">
+                        <i class="bi bi-download"></i> Export FAQ
+                    </button>
+                    <button class="quick-action-btn" onclick="askQuestion('export future issues')">
+                        <i class="bi bi-download"></i> Export Issues
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Card -->
+            <div class="info-card">
+                <h6><i class="bi bi-bar-chart me-2"></i>Session Stats</h6>
+                <div class="small">
+                    <div>Questions: <span id="questionCount">0</span></div>
+                    <div>Responses: <span id="responseCount">0</span></div>
+                    <div>Avg Confidence: <span id="avgConfidence">0%</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Main -->
+        <div class="chat-main">
+            <div class="chat-header">
+                <h5 class="mb-0"><i class="bi bi-robot me-2"></i>AI Assistant</h5>
+                <small>Your privacy-preserving audit management assistant</small>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <!-- Welcome Message -->
+                <div class="message ai-message">
+                    <div class="message-avatar ai-avatar">
+                        <i class="bi bi-robot"></i>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-bubble">
+                            Hello! I'm your AI assistant for the Audit Management System. I can help you with:
+                            <br><br>
+                            • Technical issues and troubleshooting<br>
+                            • Process questions and procedures<br>
+                            • Policy and compliance information<br>
+                            • Data export and reports<br>
+                            • Version-specific information<br>
+                            <br>
+                            How can I assist you today?
+                        </div>
+                        <div class="message-meta">
+                            <span class="source-indicator">Local AI</span>
+                            <span>Just now</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input-container">
+                <div class="chat-input-wrapper">
+                    <textarea 
+                        id="chatInput" 
+                        class="chat-input" 
+                        placeholder="Type your question here..."
+                        rows="1"
+                        onkeypress="handleKeyPress(event)"
+                        oninput="autoResize(this)"></textarea>
+                    <button id="sendBtn" class="chat-send-btn" onclick="sendMessage()">
+                        <i class="bi bi-send"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display:none;">
+        <div class="spinner"></div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Chat State
+let chatState = {
+    messages: [],
+    questionCount: 0,
+    responseCount: 0,
+    totalConfidence: 0,
+    isTyping: false
+};
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    updateStats();
+    
+    // Focus input
+    document.getElementById('chatInput').focus();
+});
+
+// Handle Enter key
+function handleKeyPress(event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendMessage();
+    }
+}
+
+// Auto-resize textarea
+function autoResize(textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+}
+
+// Send message
+function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    
+    if (!message || chatState.isTyping) return;
+    
+    // Add user message
+    addMessage(message, 'user');
+    input.value = '';
+    autoResize(input);
+    
+    // Update stats
+    chatState.questionCount++;
+    updateStats();
+    
+    // Show typing indicator
+    showTypingIndicator();
+    
+    // Send to AI
+    sendToAI(message);
+}
+
+// Add message to chat
+function addMessage(content, sender, metadata = {}) {
+    const messagesContainer = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${sender}-message`;
+    
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    // Process content for download links
+    let processedContent = escapeHtml(content);
+    if (metadata.download_url && metadata.filename) {
+        processedContent += `<br><br><a href="${metadata.download_url}" download="${metadata.filename}" class="btn btn-sm btn-primary">
+            <i class="bi bi-download"></i> Download ${metadata.filename}
+        </a>`;
+    }
+    
+    messageDiv.innerHTML = `
+        <div class="message-avatar ${sender}-avatar">
+            <i class="bi bi-${sender === 'user' ? 'person' : 'robot'}"></i>
+        </div>
+        <div class="message-content">
+            <div class="message-bubble">${processedContent}</div>
+            <div class="message-meta">
+                ${metadata.confidence ? `<span class="confidence-badge">${Math.round(metadata.confidence * 100)}%</span>` : ''}
+                ${metadata.source ? `<span class="source-indicator">${metadata.source}</span>` : ''}
+                <span>${timestamp}</span>
+            </div>
+        </div>
+    `;
+    
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    
+    // Store message
+    chatState.messages.push({
+        content: content,
+        sender: sender,
+        timestamp: new Date().toISOString(),
+        metadata: metadata
+    });
+}
+
+// Show typing indicator
+function showTypingIndicator() {
+    chatState.isTyping = true;
+    const messagesContainer = document.getElementById('chatMessages');
+    
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'message ai-message';
+    typingDiv.id = 'typingIndicator';
+    
+    typingDiv.innerHTML = `
+        <div class="message-avatar ai-avatar">
+            <i class="bi bi-robot"></i>
+        </div>
+        <div class="message-content">
+            <div class="typing-indicator">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+    `;
+    
+    messagesContainer.appendChild(typingDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+// Hide typing indicator
+function hideTypingIndicator() {
+    chatState.isTyping = false;
+    const typingIndicator = document.getElementById('typingIndicator');
+    if (typingIndicator) {
+        typingIndicator.remove();
+    }
+}
+
+// Send to AI
+async function sendToAI(message) {
+    try {
+        const response = await fetch('/ai/api/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: message,
+                context: {
+                    user_role: '{{ session.get("role", "user") }}',
+                    state_name: '{{ session.get("state_name", "") }}',
+                    session_id: '{{ session.get("user_id", "") }}'
+                }
+            })
+        });
+        
+        const data = await response.json();
+        
+        hideTypingIndicator();
+        
+        if (data.success) {
+            addMessage(data.response, 'ai', {
+                confidence: data.confidence || 0.8,
+                source: data.source || 'Local AI',
+                response_type: data.response_type || 'generated',
+                download_url: data.download_url,
+                filename: data.filename
+            });
+            
+            // Update stats
+            chatState.responseCount++;
+            chatState.totalConfidence += data.confidence || 0.8;
+            updateStats();
+            
+            // Learn from interaction
+            if (data.learn_enabled) {
+                learnFromInteraction(message, data.response);
+            }
+        } else {
+            // Show actual error message from server
+            let errorMessage = data.error || 'Unknown error occurred';
+            
+            // If it's an object, stringify it properly
+            if (typeof errorMessage === 'object') {
+                errorMessage = JSON.stringify(errorMessage);
+            }
+            
+            addMessage(`❌ ${errorMessage}`, 'ai', {
+                confidence: 0.1,
+                source: 'Error'
+            });
+        }
+        
+    } catch (error) {
+        hideTypingIndicator();
+        addMessage('I apologize, but I am unable to connect to the AI service right now.', 'ai', {
+            confidence: 0.1,
+            source: 'Error'
+        });
+    }
+}
+
+// Learn from interaction
+async function learnFromInteraction(question, response) {
+    try {
+        await fetch('/ai/api/learn', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                question: question,
+                response: response
+            })
+        });
+    } catch (error) {
+        console.log('Learning failed:', error);
+    }
+}
+
+// Quick action
+function askQuestion(topic) {
+    const questions = {
+        'technical issue': 'I am experiencing a technical issue with the system',
+        'process help': 'Can you help me understand the process for data export?',
+        'policy question': 'What are the policies regarding data access?',
+        'export faq data': 'I need to export FAQ data',
+        'export future issues': 'I need to export future issues data'
+    };
+    
+    document.getElementById('chatInput').value = questions[topic] || topic;
+    sendMessage();
+}
+
+// Handle export confirmation in chat
+async function confirmExport(exportType, criteria = {}) {
+    try {
+        showLoading();
+        
+        const response = await fetch('/ai/api/export_data', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                export_type: exportType,
+                format: 'excel', // Only Excel format
+                criteria: criteria
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Add success message to chat
+            addMessage(`✅ Export completed! Downloaded ${result.record_count} records as ${result.filename}.`, 'ai', {
+                confidence: 1.0,
+                source: 'Export System',
+                download_url: result.download_url,
+                filename: result.filename
+            });
+            
+            // Add download link as separate message
+            addMessage(`📥 [Download ${result.filename}](${result.download_url})`, 'ai', {
+                confidence: 1.0,
+                source: 'Export System'
+            });
+            
+        } else {
+            addMessage(`❌ Export failed: ${result.error}`, 'ai', {
+                confidence: 0.1,
+                source: 'Export System'
+            });
+        }
+        
+    } catch (error) {
+        addMessage('❌ Export failed due to a system error.', 'ai', {
+            confidence: 0.1,
+            source: 'Export System'
+        });
+    } finally {
+        hideLoading();
+    }
+}
+
+// Enhanced message display to handle download links
+function addMessage(content, sender, metadata = {}) {
+    const messagesContainer = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${sender}-message`;
+    
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    // Process content for download links
+    let processedContent = escapeHtml(content);
+    if (metadata.download_url && metadata.filename) {
+        processedContent = processedContent.replace(
+            `[Download ${metadata.filename}](${metadata.download_url})`,
+            `<a href="${metadata.download_url}" download="${metadata.filename}" class="btn btn-sm btn-primary ms-2">
+                <i class="bi bi-download"></i> Download ${metadata.filename}
+            </a>`
+        );
+    }
+    
+    messageDiv.innerHTML = `
+        <div class="message-avatar ${sender}-avatar">
+            <i class="bi bi-${sender === 'user' ? 'person' : 'robot'}"></i>
+        </div>
+        <div class="message-content">
+            <div class="message-bubble">${processedContent}</div>
+            <div class="message-meta">
+                ${metadata.confidence ? `<span class="confidence-badge">${Math.round(metadata.confidence * 100)}%</span>` : ''}
+                ${metadata.source ? `<span class="source-indicator">${metadata.source}</span>` : ''}
+                <span>${timestamp}</span>
+            </div>
+        </div>
+    `;
+    
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    
+    // Store message
+    chatState.messages.push({
+        content: content,
+        sender: sender,
+        timestamp: new Date().toISOString(),
+        metadata: metadata
+    });
+}
+
+// Update statistics
+function updateStats() {
+    document.getElementById('questionCount').textContent = chatState.questionCount;
+    document.getElementById('responseCount').textContent = chatState.responseCount;
+    
+    const avgConf = chatState.responseCount > 0 
+        ? Math.round((chatState.totalConfidence / chatState.responseCount) * 100)
+        : 0;
+    document.getElementById('avgConfidence').textContent = avgConf + '%';
+}
+
+// Escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Show loading
+function showLoading() {
+    document.getElementById('loadingOverlay').style.display = 'flex';
+}
+
+// Hide loading
+function hideLoading() {
+    document.getElementById('loadingOverlay').style.display = 'none';
+}
+</script>
+</body>
+</html>

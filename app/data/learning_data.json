@@ -1,0 +1,214 @@
+{
+  "interactions": [
+    {
+      "question": "hi",
+      "response": "Hello! How can I help you today? As a admin, for ,",
+      "feedback": "",
+      "timestamp": "2026-03-11T04:57:14.480943",
+      "success": false
+    },
+    {
+      "question": "how to add new question",
+      "response": "I can help you with this process-related question. As a admin, for ,",
+      "feedback": "",
+      "timestamp": "2026-03-11T04:57:33.253684",
+      "success": false
+    },
+    {
+      "question": "I need to export FAQ data",
+      "response": "I can help you export FAQ data! Let me prepare that for you.\n\n**Export Options:**\n\u2022 FAQ Database - All answered questions\n\u2022 Filter by state (optional)\n\nPlease specify:\n1. Which state's data would you like? (or \"all states\")\n2. Any specific filters needed?\n\nOnce you confirm, I'll generate the Excel file for download.",
+      "feedback": "",
+      "timestamp": "2026-03-11T04:58:23.633680",
+      "success": false
+    },
+    {
+      "question": "give data of tamilnadu",
+      "response": "I can assist you with data-related queries and reports. As a admin, for ,",
+      "feedback": "",
+      "timestamp": "2026-03-11T04:58:55.429662",
+      "success": false
+    },
+    {
+      "question": "TN",
+      "response": "I apologize, but I don't have specific information about that. As a admin, for ,",
+      "feedback": "",
+      "timestamp": "2026-03-11T04:59:02.568256",
+      "success": false
+    },
+    {
+      "question": "I need to export FAQ data",
+      "response": "I can help you export FAQ data! Let me prepare that for you.\n\n**Export Options:**\n\u2022 FAQ Database - All answered questions\n\u2022 Filter by state (optional)\n\nPlease specify:\n1. Which state's data would you like? (or \"all states\")\n2. Any specific filters needed?\n\nOnce you confirm, I'll generate the Excel file for download.",
+      "feedback": "",
+      "timestamp": "2026-03-11T04:59:08.494719",
+      "success": false
+    },
+    {
+      "question": "For TN",
+      "response": "I apologize, but I don't have specific information about that. As a admin, for ,",
+      "feedback": "",
+      "timestamp": "2026-03-11T04:59:15.816443",
+      "success": false
+    },
+    {
+      "question": "hi",
+      "response": "Hello! How can I help you today? As a admin, for ,",
+      "feedback": "",
+      "timestamp": "2026-03-11T04:59:33.254164",
+      "success": false
+    },
+    {
+      "question": "I need to export FAQ data",
+      "response": "I can help you export FAQ data! Let me prepare that for you.\n\n**Export Options:**\n\u2022 FAQ Database - All answered questions\n\u2022 Filter by state (optional)\n\nPlease specify:\n1. Which state's data would you like? (or \"all states\")\n2. Any specific filters needed?\n\nOnce you confirm, I'll generate the Excel file for download.",
+      "feedback": "",
+      "timestamp": "2026-03-11T04:59:38.938877",
+      "success": false
+    },
+    {
+      "question": "odisha",
+      "response": "I apologize, but I don't have specific information about that. As a admin, for ,",
+      "feedback": "",
+      "timestamp": "2026-03-11T04:59:48.411280",
+      "success": false
+    },
+    {
+      "question": "TN state FAQ data",
+      "response": "Let me help you with your data request. As a admin, for ,",
+      "feedback": "",
+      "timestamp": "2026-03-11T05:00:02.479942",
+      "success": false
+    },
+    {
+      "question": "hi",
+      "response": "Welcome! What can I assist you with? As a admin, for ,",
+      "feedback": "",
+      "timestamp": "2026-03-11T05:01:22.575483",
+      "success": false
+    },
+    {
+      "question": "hi",
+      "response": "Hello! How can I help you today? As a admin, for ,",
+      "feedback": "",
+      "timestamp": "2026-03-11T05:10:32.139499",
+      "success": false
+    },
+    {
+      "question": "hi",
+      "response": "Hello! How can I help you today? As a admin, for ,",
+      "feedback": "",
+      "timestamp": "2026-03-11T05:11:41.529338",
+      "success": false
+    },
+    {
+      "question": "hi",
+      "response": "Hello! How can I help you today?",
+      "feedback": "",
+      "timestamp": "2026-03-11T05:19:15.886070",
+      "success": false
+    },
+    {
+      "question": "hi",
+      "response": "Welcome! What can I assist you with?",
+      "feedback": "",
+      "timestamp": "2026-03-11T05:28:36.407077",
+      "success": false
+    },
+    {
+      "question": "hi",
+      "response": "Welcome! What can I assist you with?",
+      "feedback": "",
+      "timestamp": "2026-03-11T05:32:30.764131",
+      "success": false
+    },
+    {
+      "question": "I need to export FAQ data",
+      "response": "I can help you export FAQ data! Before I generate the file, let me confirm your preferences:\n\n**Export Options:**\n\u2022 **Data Scope**: Full database or filtered by specific criteria?\n\u2022 **State Filter**: All states or specific state(s)?\n\u2022 **Time Period**: All time or specific year?\n\n**Please specify:**\n1. Do you want **full data** or **filtered data**?\n2. If filtered, which state(s)? (e.g., \"Tamil Nadu\", \"OD\", \"all states\")\n3. Any specific year? (e.g., \"2024\", \"2025\", or \"all years\")\n\nExample responses:\n- \"Full data, all states, all years\"\n- \"Filtered data, Tamil Nadu, 2024\"\n- \"OD state only, 2025\"\n\nOnce you confirm, I'll generate the Excel file for immediate download!",
+      "feedback": "",
+      "timestamp": "2026-03-11T05:53:13.000003",
+      "success": false
+    },
+    {
+      "question": "TN for the year 2025",
+      "response": "I apologize, but I don't have specific information about that.",
+      "feedback": "",
+      "timestamp": "2026-03-11T05:53:59.650948",
+      "success": false
+    },
+    {
+      "question": "I need to export FAQ data",
+      "response": "I can help you export FAQ data! Before I generate the file, let me confirm your preferences:\n\n**Export Options:**\n\u2022 **Data Scope**: Full database or filtered by specific criteria?\n\u2022 **State Filter**: All states or specific state(s)?\n\u2022 **Time Period**: All time or specific year?\n\n**Please specify:**\n1. Do you want **full data** or **filtered data**?\n2. If filtered, which state(s)? (e.g., \"Tamil Nadu\", \"OD\", \"all states\")\n3. Any specific year? (e.g., \"2024\", \"2025\", or \"all years\")\n\nExample responses:\n- \"Full data, all states, all years\"\n- \"Filtered data, Tamil Nadu, 2024\"\n- \"OD state only, 2025\"\n\nOnce you confirm, I'll generate the Excel file for immediate download!",
+      "feedback": "",
+      "timestamp": "2026-03-11T05:55:24.608008",
+      "success": false
+    },
+    {
+      "question": "OD state only, 2025",
+      "response": "Let me connect you with someone who can better assist you.",
+      "feedback": "",
+      "timestamp": "2026-03-11T05:56:05.527658",
+      "success": false
+    },
+    {
+      "question": "I need to export FAQ data",
+      "response": "I can help you export FAQ data! Before I generate the file, let me confirm your preferences:\n\n**Export Options:**\n\u2022 **Data Scope**: Full database or filtered by specific criteria?\n\u2022 **State Filter**: All states or specific state(s)?\n\u2022 **Time Period**: All time or specific year?\n\n**Please specify:**\n1. Do you want **full data** or **filtered data**?\n2. If filtered, which state(s)? (e.g., \"Tamil Nadu\", \"OD\", \"all states\")\n3. Any specific year? (e.g., \"2024\", \"2025\", or \"all years\")\n\nExample responses:\n- \"Full data, all states, all years\"\n- \"Filtered data, Tamil Nadu, 2024\"\n- \"OD state only, 2025\"\n\nOnce you confirm, I'll generate the Excel file for immediate download!",
+      "feedback": "",
+      "timestamp": "2026-03-11T06:38:48.240538",
+      "success": false
+    },
+    {
+      "question": "tn state only, 2026",
+      "response": "I apologize, but I don't have specific information about that.",
+      "feedback": "",
+      "timestamp": "2026-03-11T06:39:21.971515",
+      "success": false
+    },
+    {
+      "question": "TN state only, 2026",
+      "response": "Let me connect you with someone who can better assist you.",
+      "feedback": "",
+      "timestamp": "2026-03-11T06:39:43.800098",
+      "success": false
+    },
+    {
+      "question": "I need to export FAQ data",
+      "response": "I can help you export FAQ data! Before I generate the file, let me confirm your preferences:\n\n**Export Options:**\n\u2022 **Data Scope**: Full database or filtered by specific criteria?\n\u2022 **State Filter**: All states or specific state(s)?\n\u2022 **Time Period**: All time or specific year?\n\n**Please specify:**\n1. Do you want **full data** or **filtered data**?\n2. If filtered, which state(s)? (e.g., \"Tamil Nadu\", \"OD\", \"all states\")\n3. Any specific year? (e.g., \"2024\", \"2025\", or \"all years\")\n\nExample responses:\n- \"Full data, all states, all years\"\n- \"Filtered data, Tamil Nadu, 2024\"\n- \"OD state only, 2025\"\n\nOnce you confirm, I'll generate the Excel file for immediate download!",
+      "feedback": "",
+      "timestamp": "2026-03-11T06:43:25.093644",
+      "success": false
+    },
+    {
+      "question": "TN state only, 2026",
+      "response": "Let me connect you with someone who can better assist you.",
+      "feedback": "",
+      "timestamp": "2026-03-11T06:43:43.824774",
+      "success": false
+    },
+    {
+      "question": "I need to export FAQ data",
+      "response": "I can help you export FAQ data! Before I generate the file, let me confirm your preferences:\n\n**Export Options:**\n\u2022 **Data Scope**: Full database or filtered by specific criteria?\n\u2022 **State Filter**: All states or specific state(s)?\n\u2022 **Time Period**: All time or specific year?\n\n**Please specify:**\n1. Do you want **full data** or **filtered data**?\n2. If filtered, which state(s)? (e.g., \"Tamil Nadu\", \"OD\", \"all states\")\n3. Any specific year? (e.g., \"2024\", \"2025\", or \"all years\")\n\nExample responses:\n- \"Full data, all states, all years\"\n- \"Filtered data, Tamil Nadu, 2024\"\n- \"OD state only, 2025\"\n\nOnce you confirm, I'll generate the Excel file for immediate download!",
+      "feedback": "",
+      "timestamp": "2026-03-11T06:48:00.517682",
+      "success": false
+    },
+    {
+      "question": "Tamil Nadu, 2026",
+      "response": "Let me connect you with someone who can better assist you.",
+      "feedback": "",
+      "timestamp": "2026-03-11T06:48:17.610124",
+      "success": false
+    },
+    {
+      "question": "I need to export FAQ data",
+      "response": "I can help you export FAQ data! Before I generate the file, let me confirm your preferences:\n\n**Export Options:**\n\u2022 **Data Scope**: Full database or filtered by specific criteria?\n\u2022 **State Filter**: All states or specific state(s)?\n\u2022 **Time Period**: All time or specific year?\n\n**Please specify:**\n1. Do you want **full data** or **filtered data**?\n2. If filtered, which state(s)? (e.g., \"Tamil Nadu\", \"OD\", \"all states\")\n3. Any specific year? (e.g., \"2024\", \"2025\", or \"all years\")\n\nExample responses:\n- \"Full data, all states, all years\"\n- \"Filtered data, Tamil Nadu, 2024\"\n- \"OD state only, 2025\"\n\nOnce you confirm, I'll generate the Excel file for immediate download!",
+      "feedback": "",
+      "timestamp": "2026-03-11T06:51:28.609444",
+      "success": false
+    },
+    {
+      "question": "Tamil Nadu, 2026",
+      "response": "Let me connect you with someone who can better assist you.",
+      "feedback": "",
+      "timestamp": "2026-03-11T06:51:39.110924",
+      "success": false
+    }
+  ]
+}

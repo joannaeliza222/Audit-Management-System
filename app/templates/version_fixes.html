@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upcoming Version Fixes - AMS</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='enhanced_styles.css') }}">
+    
+    <style>
+        .priority-high { border-left: 4px solid #dc3545; }
+        .priority-medium { border-left: 4px solid #ffc107; }
+        .priority-low { border-left: 4px solid #28a745; }
+        
+        .status-completed { background-color: #d4edda; }
+        .status-in-progress { background-color: #fff3cd; }
+        .status-pending { background-color: #f8d7da; }
+        
+        .progress-ring {
+            width: 60px;
+            height: 60px;
+        }
+        
+        .progress-ring circle {
+            transition: stroke-dashoffset 0.35s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        
+        .fix-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        
+        .fix-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .badge-priority {
+            font-size: 0.75rem;
+        }
+        
+        .module-tag {
+            background-color: #e9ecef;
+            color: #495057;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Enhanced Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand text-white fw-bold" href="{{ url_for('enhanced_frontend.enhanced_index') }}">
+        <img class="logo-box" src="{{ url_for('static', filename='logo.png') }}" height="32" class="me-2" style="background-color: white; padding: 4px; border-radius: 4px;"> Audit Management System
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="bi bi-clipboard-data"></i> Query Management
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('enhanced_frontend.create_query') }}">
+                <i class="bi bi-plus-circle"></i> Create Query
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('pending.pending') }}">
+                <i class="bi bi-hourglass-split"></i> Pending Queries
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('replied.replied') }}">
+                <i class="bi bi-search"></i> Search Queries
+              </a></li>
+              {% if role == 'admin' %}
+              <li><a class="dropdown-item" href="{{ url_for('review.review_drafts') }}">
+                <i class="bi bi-book"></i> Review Answers
+              </a></li>
+              {% endif %}
+            </ul>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('futurefix.future_issues') }}">
+              <i class="bi bi-tools"></i> Upcoming Version Fixes
+            </a>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="bi bi-graph-up"></i> Analytics
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('audit_analytics.audit_analytics') }}">
+                <i class="bi bi-bar-chart"></i> Audit Analytics
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="showDataDumpAnalytics()">
+                <i class="bi bi-database"></i> Data Dump Analytics
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="showAIAnalytics()">
+                <i class="bi bi-cpu"></i> AI Performance
+              </a></li>
+            </ul>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="bi bi-file-text"></i> Documents
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="#" onclick="showDocumentUpload()">
+                <i class="bi bi-upload"></i> Upload Document
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="showKnowledgeBase()">
+                <i class="bi bi-journal-text"></i> Knowledge Base
+              </a></li>
+            </ul>
+          </li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}">
+            <i class="bi bi-box-arrow-right"></i> Logout
+          </a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container mt-3">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Main Content -->
+    <main class="container my-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="h3 mb-1">
+                            <i class="bi bi-tools"></i> Upcoming Version Fixes
+                        </h1>
+                        <p class="text-muted mb-0">Track and monitor upcoming fixes and improvements</p>
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" onclick="refreshFixes()">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="card card-soft p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Total Fixes</h6>
+                            <div class="h4 mb-0">{{ total_fixes }}</div>
+                        </div>
+                        <div class="text-primary">
+                            <i class="bi bi-list-check" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card card-soft p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Completed</h6>
+                            <div class="h4 mb-0 text-success">{{ completed_fixes }}</div>
+                        </div>
+                        <div class="text-success">
+                            <i class="bi bi-check-circle" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card card-soft p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">In Progress</h6>
+                            <div class="h4 mb-0 text-warning">{{ in_progress_fixes }}</div>
+                        </div>
+                        <div class="text-warning">
+                            <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card card-soft p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Overdue</h6>
+                            <div class="h4 mb-0 text-danger">{{ overdue_fixes }}</div>
+                        </div>
+                        <div class="text-danger">
+                            <i class="bi bi-exclamation-triangle" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Future Issues Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card card-soft p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="mb-0">
+                            <i class="bi bi-exclamation-triangle"></i> Future Issues ({{ future_issues|length }})
+                        </h4>
+                        <div class="d-flex gap-2">
+                            <select class="form-select form-select-sm" style="width: auto;" onchange="location.href='?status=' + this.value">
+                                <option value="">All Status</option>
+                                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                                <option value="addressed" {% if status_filter == 'addressed' %}selected{% endif %}>Addressed</option>
+                                <option value="not addressed" {% if status_filter == 'not addressed' %}selected{% endif %}>Not Addressed</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    {% if future_issues %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Issue</th>
+                                    <th>Context</th>
+                                    <th>Status</th>
+                                    <th>Detected</th>
+                                    <th>Version Fixed</th>
+                                    {% if can_mark_addressed %}
+                                    <th>Actions</th>
+                                    {% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for issue in future_issues %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ issue.issue_text[:100] }}{% if issue.issue_text|length > 100 %}...{% endif %}</div>
+                                        {% if issue.note %}
+                                        <small class="text-muted">{{ issue.note[:50] }}{% if issue.note|length > 50 %}...{% endif %}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if issue.related_draft_id %}
+                                        <span class="badge bg-info">Draft FAQ</span>
+                                        {% elif issue.related_faq_id %}
+                                        <span class="badge bg-success">FAQ</span>
+                                        {% endif %}
+                                        {% if issue.source_state %}
+                                        <small class="text-muted">{{ issue.source_state }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if issue.status == 'pending' %}
+                                        <span class="badge bg-warning">Pending</span>
+                                        {% elif issue.status == 'addressed' %}
+                                        <span class="badge bg-success">Addressed</span>
+                                        {% elif issue.status == 'not addressed' %}
+                                        <span class="badge bg-danger">Not Addressed</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small>{{ issue.detected_at.strftime('%Y-%m-%d') if issue.detected_at else '' }}</small>
+                                    </td>
+                                    <td>
+                                        {% if issue.version_fixed %}
+                                        <span class="badge bg-primary">{{ issue.version_fixed }}</span>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    {% if can_mark_addressed %}
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            {% if issue.status != 'addressed' %}
+                                            <form method="POST" style="display: inline;">
+                                                <input type="hidden" name="issue_id" value="{{ issue.id }}">
+                                                <input type="hidden" name="action" value="mark_addressed">
+                                                <input type="hidden" name="version_fixed" value="{{ os.getenv('PORTAL_VERSION', 'v2.1.0') }}">
+                                                <button type="submit" class="btn btn-success btn-sm" title="Mark as Addressed">
+                                                    <i class="bi bi-check"></i>
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                            {% if issue.status != 'not addressed' %}
+                                            <form method="POST" style="display: inline;">
+                                                <input type="hidden" name="issue_id" value="{{ issue.id }}">
+                                                <input type="hidden" name="action" value="mark_not_addressed">
+                                                <button type="submit" class="btn btn-danger btn-sm" title="Mark as Not Addressed">
+                                                    <i class="bi bi-x"></i>
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    {% endif %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-check-circle" style="font-size: 3rem;"></i>
+                        <p class="mb-0">No future issues found.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter and Sort -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card card-soft p-3">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <label class="form-label">Filter by Priority</label>
+                            <select class="form-select" id="priorityFilter" onchange="filterFixes()">
+                                <option value="">All Priorities</option>
+                                <option value="high">High</option>
+                                <option value="medium">Medium</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Filter by Status</label>
+                            <select class="form-select" id="statusFilter" onchange="filterFixes()">
+                                <option value="">All Status</option>
+                                <option value="completed">Completed</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="pending">Pending</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Sort by</label>
+                            <select class="form-select" id="sortBy" onchange="sortFixes()">
+                                <option value="priority">Priority</option>
+                                <option value="status">Status</option>
+                                <option value="target_date">Target Date</option>
+                                <option value="created_date">Created Date</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fixes List -->
+        <div class="row" id="fixesContainer">
+            {% for fix in upcoming_fixes %}
+            <div class="col-12 mb-3 fix-item" data-priority="{{ fix.priority }}" data-status="{{ fix.status }}">
+                <div class="card fix-card priority-{{ fix.priority }}">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0">{{ fix.title }}</h5>
+                                    <div>
+                                        <span class="badge badge-priority bg-{{ 'danger' if fix.priority == 'high' else 'warning' if fix.priority == 'medium' else 'success' }}">
+                                            {{ fix.priority.upper() }}
+                                        </span>
+                                        <span class="badge bg-{{ 'success' if fix.status == 'completed' else 'warning' if fix.status == 'in_progress' else 'secondary' }} ms-2">
+                                            {{ fix.status.replace('_', ' ').title() }}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <p class="card-text text-muted">{{ fix.description }}</p>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <small class="text-muted">
+                                            <i class="bi bi-person"></i> {{ fix.assigned_to }}
+                                        </small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <small class="text-muted">
+                                            <i class="bi bi-tag"></i> {{ fix.target_version }}
+                                        </small>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mt-2">
+                                    <div class="col-md-6">
+                                        <small class="text-muted">
+                                            <i class="bi bi-calendar"></i> Target: {{ fix.target_date.strftime('%Y-%m-%d') }}
+                                        </small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <small class="text-muted">
+                                            <i class="bi bi-hdd"></i> {{ fix.issue_type.replace('_', ' ').title() }}
+                                        </small>
+                                    </div>
+                                </div>
+                                
+                                {% if fix.affected_modules %}
+                                <div class="mt-2">
+                                    {% for module in fix.affected_modules %}
+                                    <span class="module-tag me-1">{{ module }}</span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="text-center">
+                                    <div class="progress-ring mb-2">
+                                        <svg width="60" height="60">
+                                            <circle cx="30" cy="30" r="25" stroke="#e9ecef" stroke-width="5" fill="none"/>
+                                            <circle cx="30" cy="30" r="25" stroke="#007bff" stroke-width="5" fill="none"
+                                                    stroke-dasharray="{{ 157 * (fix.progress / 100) }} 157"
+                                                    stroke-linecap="round"/>
+                                        </svg>
+                                        <div class="progress-ring-text">
+                                            <small class="fw-bold">{{ fix.progress }}%</small>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">Progress</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function filterFixes() {
+            const priority = document.getElementById('priorityFilter').value;
+            const status = document.getElementById('statusFilter').value;
+            const items = document.querySelectorAll('.fix-item');
+            
+            items.forEach(item => {
+                const itemPriority = item.dataset.priority;
+                const itemStatus = item.dataset.status;
+                
+                const priorityMatch = !priority || itemPriority === priority;
+                const statusMatch = !status || itemStatus === status;
+                
+                item.style.display = priorityMatch && statusMatch ? 'block' : 'none';
+            });
+        }
+        
+        function sortFixes() {
+            const sortBy = document.getElementById('sortBy').value;
+            const container = document.getElementById('fixesContainer');
+            const items = Array.from(container.querySelectorAll('.fix-item'));
+            
+            items.sort((a, b) => {
+                // Simple sorting logic - in production, this would be more sophisticated
+                return 0; // Placeholder
+            });
+            
+            items.forEach(item => container.appendChild(item));
+        }
+        
+        function refreshFixes() {
+            location.reload();
+        }
+        
+        function showVersionFixesMonitoring() {
+            alert('Version fixes monitoring feature coming soon!');
+        }
+        
+        // Initialize tooltips
+        document.addEventListener('DOMContentLoaded', function() {
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+</body>
+</html>

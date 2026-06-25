@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Future Issue Tracker</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='enhanced_styles.css') }}">
+</head>
+<body data-page="future-issues">
+
+<div class="app-shell">
+  <!-- Enhanced Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand text-white fw-bold" href="{{ url_for('enhanced_frontend.enhanced_index') }}">
+        <img class="logo-box" src="{{ url_for('static', filename='logo.png') }}" height="32" class="me-2" style="background-color: white; padding: 4px; border-radius: 4px;"> Audit Management System
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="bi bi-clipboard-data"></i> Query Management
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('enhanced_frontend.create_query') }}">
+                <i class="bi bi-plus-circle"></i> Create Query
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('pending.pending') }}">
+                <i class="bi bi-hourglass-split"></i> Pending Queries
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('replied.replied') }}">
+                <i class="bi bi-search"></i> Search Queries
+              </a></li>
+              {% if role == 'admin' or role == 'reviewer' %}
+              <li><a class="dropdown-item" href="{{ url_for('review.review_drafts') }}">
+                <i class="bi bi-book"></i> Review Answers
+              </a></li>
+              {% endif %}
+            </ul>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('futurefix.future_issues') }}">
+              <i class="bi bi-tools"></i> Upcoming Version Fixes
+            </a>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="bi bi-graph-up"></i> Analytics
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('audit_analytics.audit_analytics') }}">
+                <i class="bi bi-bar-chart"></i> Audit Analytics
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="showDataDumpAnalytics()">
+                <i class="bi bi-database"></i> Data Dump Analytics
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="showAIAnalytics()">
+                <i class="bi bi-cpu"></i> AI Performance
+              </a></li>
+            </ul>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="bi bi-file-text"></i> Documents
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="#" onclick="showDocumentUpload()">
+                <i class="bi bi-upload"></i> Upload Document
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="showKnowledgeBase()">
+                <i class="bi bi-journal-text"></i> Knowledge Base
+              </a></li>
+            </ul>
+          </li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}">
+            <i class="bi bi-box-arrow-right"></i> Logout
+          </a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="container mt-3" style="position: fixed;
+              top: 35px;left: 50%; transform: translateX(-50%);
+              z-index: 2000;width: 40%;text-align: center;">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ 'warning' if category == 'warn' else category }} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- Main Content -->
+  <main class="my-4">
+    <div class="container">
+      <div class="card-soft p-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+          <h2 class="h4 m-0">Upcoming Version Fixes</h2>
+          {% if can_mark_addressed %}
+          <a href="{{ url_for('version_fixes.version_fixes', scan='true', redirect='future_issues') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-search"></i> Scan for Future Issues
+          </a>
+          {% endif %}
+        </div>
+
+        {% if issues %}
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Subject</th>
+                <th>Reply</th>
+                <th>Observed At</th>
+                <th>Fixed Version</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for issue in issues %}
+              <tr id="issue_row_{{ issue.id }}">
+                <td class="align-middle">{{ issue.index }}</td>
+                <td style="max-width:400px; height: 150px;" class="align-middle">
+                  <div style="max-height: 150px; overflow-y: auto; padding: 0.5rem;">
+                    {{ issue.subject }}
+                  </div>
+                </td>
+                <td style="max-width:400px; height: 150px;" class="align-middle">
+                  <div style="max-height: 150px; overflow-y: auto; padding: 0.5rem;">
+                    {% if issue.reply %}
+                      {{ issue.reply }}
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </div>
+                </td>
+                <td class="align-middle">{{ issue.detected_at.strftime('%Y-%m-%d') }}</td>
+                <td class="align-middle">{{ issue.version_fixed or '-' }}</td>
+                <td class="align-middle">
+                  {% if issue.status == 'not addressed' %}
+                  <form method="post" style="display:inline;" class="d-flex flex-column align-items-start gap-2">
+                    <input type="hidden" name="issue_id" value="{{ issue.id }}">
+                    <input type="text" name="version_fixed" class="form-control form-control-sm mb-1" placeholder="Version fixed">
+                    <textarea name="note" rows="1" class="form-control form-control-sm mb-1" placeholder="Update reply (optional)"></textarea>
+                    <button type="submit" class="btn btn-sm btn-outline-success px-3 py-1">Mark Addressed</button>
+                  </form>
+                  {% else %}
+                    <span class="text-success fw-semibold"><i class="bi bi-check-circle-fill"></i> Addressed</span>
+                    {% if issue.resolution_date %}
+                    <div class="text-muted small">Resolved: {{ issue.resolution_date.strftime('%Y-%m-%d') }}</div>
+                    {% endif %}
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info mb-0">No issues found.</div>
+        {% endif %}
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

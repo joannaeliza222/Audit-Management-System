@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Query - Enhanced AMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='enhanced_styles.css') }}">
+</head>
+<body data-page="create-query">
+    <div class="app-shell">
+        <!-- Enhanced Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+          <a class="navbar-brand text-white fw-bold" href="{{ url_for('enhanced_frontend.enhanced_index') }}">
+            <img class="logo-box" src="{{ url_for('static', filename='logo.png') }}" height="32" class="me-2" style="background-color: white; padding: 4px; border-radius: 4px;"> Audit Management System
+          </a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                  <i class="bi bi-clipboard-data"></i> Query Management
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a class="dropdown-item" href="{{ url_for('enhanced_frontend.create_query') }}">
+                    <i class="bi bi-plus-circle"></i> Create Query
+                  </a></li>
+                  <li><a class="dropdown-item" href="{{ url_for('pending.pending') }}">
+                    <i class="bi bi-hourglass-split"></i> Pending Queries
+                  </a></li>
+                  <li><a class="dropdown-item" href="{{ url_for('replied.replied') }}">
+                    <i class="bi bi-search"></i> Search Queries
+                  </a></li>
+                  {% if role == 'admin' %}
+                  <li><a class="dropdown-item" href="{{ url_for('review.review_drafts') }}">
+                    <i class="bi bi-book"></i> Review Answers
+                  </a></li>
+                  {% endif %}
+                </ul>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('futurefix.future_issues') }}">
+                  <i class="bi bi-tools"></i> Upcoming Version Fixes
+                </a>
+              </li>
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                  <i class="bi bi-graph-up"></i> Analytics
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a class="dropdown-item" href="{{ url_for('audit_analytics.audit_analytics') }}">
+                    <i class="bi bi-bar-chart"></i> Audit Analytics
+                  </a></li>
+                  <li><a class="dropdown-item" href="#" onclick="showDataDumpAnalytics()">
+                    <i class="bi bi-database"></i> Data Dump Analytics
+                  </a></li>
+                  <li><a class="dropdown-item" href="#" onclick="showAIAnalytics()">
+                    <i class="bi bi-cpu"></i> AI Performance
+                  </a></li>
+                </ul>
+              </li>
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                  <i class="bi bi-file-text"></i> Documents
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a class="dropdown-item" href="#" onclick="showDocumentUpload()">
+                    <i class="bi bi-upload"></i> Upload Document
+                  </a></li>
+                  <li><a class="dropdown-item" href="#" onclick="showKnowledgeBase()">
+                    <i class="bi bi-journal-text"></i> Knowledge Base
+                  </a></li>
+                </ul>
+              </li>
+              <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}">
+                <i class="bi bi-box-arrow-right"></i> Logout
+              </a></li>
+            </ul>
+          </div>
+        </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container-fluid">
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h2 class="page-title">Create Query</h2>
+                        <p class="text-muted">Create a new audit query with the details below</p>
+                    </div>
+                </div>
+
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- AJAX Alert Container -->
+                <div class="alert-container"></div>
+
+                <!-- Create Query Form -->
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Query Details</h5>
+                            </div>
+                            <div class="card-body">
+                                <form method="POST" action="{{ url_for('enhanced_frontend.create_query') }}" id="createQueryForm">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="memo_id" class="form-label">Memo ID</label>
+                                                <input type="text" class="form-control" id="memo_id" name="memo_id" placeholder="Optional memo identifier">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="state" class="form-label">State <span class="text-danger">*</span></label>
+                                                <select class="form-select" id="state" name="state" required>
+                                                    <option value="">Select State</option>
+                                                    {% for state in states %}
+                                                        <option value="{{ state }}">{{ state }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="mb-3">
+                                                <label for="query_date" class="form-label">Query Date <span class="text-danger">*</span></label>
+                                                <input type="date" class="form-control" id="query_date" name="query_date" required>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="subject" class="form-label">Subject <span class="text-danger">*</span></label>
+                                        <textarea class="form-control" id="subject" name="subject" rows="3" required></textarea>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="query_details" class="form-label">Query Details</label>
+                                        <textarea class="form-control" id="query_details" name="query_details" rows="6" placeholder="Detailed description of query"></textarea>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="reply" class="form-label">Reply</label>
+                                        <textarea class="form-control" id="reply" name="reply" rows="4" placeholder="Optional reply to query"></textarea>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between">
+                                        <a href="{{ url_for('enhanced_frontend.enhanced_index') }}" class="btn btn-secondary">Back to Dashboard</a>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="bi bi-plus-circle"></i> Create Query
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Quick Actions</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <a href="{{ url_for('pending.pending') }}" class="btn btn-outline-primary">
+                                        <i class="bi bi-hourglass-split"></i> View Pending Queries
+                                    </a>
+                                    <a href="{{ url_for('replied.replied') }}" class="btn btn-outline-success">
+                                        <i class="bi bi-check2-circle"></i> View Answered Queries
+                                    </a>
+                                    <a href="{{ url_for('chatbot_pages.enhanced_chatbot') }}" class="btn btn-outline-info">
+                                        <i class="bi bi-robot"></i> AI Assistant
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Help</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="small text-muted">
+                                    <strong>Memo ID:</strong> Optional memo identifier<br>
+                                    <strong>State:</strong> Select the relevant state (Required)<br>
+                                    <strong>Date:</strong> Query date (Required)<br>
+                                    <strong>Subject:</strong> Brief description of the query (Required)<br>
+                                    <strong>Query Details:</strong> Detailed description of the query<br>
+                                    <strong>Reply:</strong> Optional reply to query
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Set today's date as default
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('query_date').value = today;
+            
+            // Handle form submission with AJAX
+            const form = document.getElementById('createQueryForm');
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Disable submit button to prevent double submission
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Creating...';
+                
+                // Create FormData from the form
+                const formData = new FormData(form);
+                
+                // Send AJAX request
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Show alert message
+                    showAlert(data.message, data.type);
+                    
+                    if (data.success) {
+                        // Reset form on success
+                        form.reset();
+                        // Reset date to today
+                        const today = new Date().toISOString().split('T')[0];
+                        document.getElementById('query_date').value = today;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('Error creating query. Please try again.', 'danger');
+                })
+                .finally(() => {
+                    // Re-enable submit button
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                });
+            });
+        });
+        
+        function showAlert(message, type) {
+            // Remove any existing alerts
+            const existingAlert = document.querySelector('.alert-container .alert');
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+            
+            // Create alert element
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            
+            // Add alert to container
+            const alertContainer = document.querySelector('.alert-container');
+            alertContainer.appendChild(alertDiv);
+            
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

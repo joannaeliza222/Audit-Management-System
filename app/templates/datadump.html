@@ -1,0 +1,856 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <!-- CSRF disabled globally for chatbot API compatibility -->
+  <title>Data Dump - Audit Management System</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='enhanced_styles.css') }}">
+  <style>
+
+  /* Add horizontal scroll both top & bottom */
+  .table-scroll-wrapper {
+    overflow-x: auto;
+    overflow-y: hidden;
+    position: relative;
+  }
+
+  /* Top scrollbar */
+  .table-scroll-wrapper::before {
+    content: '';
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    height: 16px;
+  }
+
+  .table-scroll-wrapper::before::-webkit-scrollbar {
+    height: 12px;
+  }
+
+  .table-scroll-wrapper::-webkit-scrollbar {
+    height: 12px;
+  }
+
+  /* Beautify */
+  th, td {
+    padding: 6px 10px !important;
+    white-space: nowrap;
+  }
+
+  /* Allow long text to wrap only in selected columns */
+  .wrap-text {
+    white-space: normal !important;
+    max-width: 260px;
+  }
+
+  table {
+    border-collapse: separate;
+    border-spacing: 0 4px;
+  }
+
+
+
+
+
+.upload-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #444;
+  border: 1px dashed #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: transparent;
+}
+
+.upload-btn:hover {
+  color: #000;
+  border-color: #999;
+  background: #f8f9fa;
+}
+
+.upload-btn:active {
+  transform: scale(0.97);
+}
+
+
+
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <!-- Enhanced Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand text-white fw-bold" href="{{ url_for('enhanced_frontend.enhanced_index') }}">
+        <img class="logo-box" src="{{ url_for('static', filename='logo.png') }}" height="32" class="me-2" style="background-color: white; padding: 4px; border-radius: 4px;"> Audit Management System
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="bi bi-clipboard-data"></i> Query Management
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('enhanced_frontend.create_query') }}">
+                <i class="bi bi-plus-circle"></i> Create Query
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('pending.pending') }}">
+                <i class="bi bi-hourglass-split"></i> Pending Queries
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('replied.replied') }}">
+                <i class="bi bi-search"></i> Search Queries
+              </a></li>
+              {% if role == 'admin' %}
+              <li><a class="dropdown-item" href="{{ url_for('review.review_drafts') }}">
+                <i class="bi bi-book"></i> Review Answers
+              </a></li>
+              {% endif %}
+            </ul>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('futurefix.future_issues') }}">
+              <i class="bi bi-tools"></i> Upcoming Version Fixes
+            </a>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="bi bi-graph-up"></i> Analytics
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('audit_analytics.audit_analytics') }}">
+                <i class="bi bi-bar-chart"></i> Audit Analytics
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="showDataDumpAnalytics()">
+                <i class="bi bi-database"></i> Data Dump Analytics
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="showAIAnalytics()">
+                <i class="bi bi-cpu"></i> AI Performance
+              </a></li>
+            </ul>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="bi bi-file-text"></i> Documents
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="#" onclick="showDocumentUpload()">
+                <i class="bi bi-upload"></i> Upload Document
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="showKnowledgeBase()">
+                <i class="bi bi-journal-text"></i> Knowledge Base
+              </a></li>
+            </ul>
+          </li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}">
+            <i class="bi bi-box-arrow-right"></i> Logout
+          </a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container my-4">
+    <div class="card p-4 shadow-sm">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="m-0">Data Dump Management</h3>
+        <div>
+          <button id="openRequestBtn" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#requestModal">
+            Request Data Dump
+          </button>
+        </div>
+      </div>
+
+      <!-- filters -->
+      <form class="row g-3 mb-3" id="filterDumpForm" method="GET" action="{{ url_for('dump.datadump') }}">
+        <div class="col-md-3">
+          <label class="form-label">Year</label>
+          <select name="year" class="form-select">
+            <option value="">All</option>
+            {% for y in distinct_years %}
+              <option value="{{ y }}" {% if selected_year and selected_year|int == y %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">State</label>
+          <select name="state" class="form-select">
+            <option value="">All</option>
+            {% for s in distinct_states %}
+              <option value="{{ s }}" {% if selected_state == s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Status</label>
+          <select name="status" class="form-select">
+            <option value="">All</option>
+            <option value="REQUESTED" {% if selected_status=='REQUESTED' %}selected{% endif %}>Requested</option>
+            <option value="PROVIDED" {% if selected_status=='PROVIDED' %}selected{% endif %}>Provided</option>
+            <option value="REJECTED" {% if selected_status=='REJECTED' %}selected{% endif %}>Rejected</option>
+          </select>
+        </div>
+        <div class="col-md-3 d-flex align-items-end gap-2">
+          <button class="btn btn-secondary" type="submit">Apply</button>
+          <a class="btn btn-outline-dark" href="{{ url_for('dump.datadump') }}">Reset</a>
+        </div>
+      </form>
+
+      <!-- summary KPIs -->
+      <div class="row g-3 mb-3">
+        <div class="col-md-3">
+          <div class="p-3 border rounded">
+            <div class="text-secondary">Total States</div>
+            <div class="h4">{{ total_states_dump }}</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="p-3 border rounded">
+            <div class="text-secondary">Total Dumps</div>
+            <div class="h4">{{ total_dumps }}</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="p-3 border rounded">
+            <div class="text-secondary">Filtered</div>
+            <div class="h4">{{ filtered_dumps }}</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="p-3 border rounded">
+            <div class="text-secondary">Page role</div>
+            <div class="h5">{{ role }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- records table -->
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>State</th>
+              <th>Nodal Dept</th>
+              <th>Coordinator</th>
+              <th class="wrap-text">Request Date</th>
+              <th class="wrap-text">Request Details</th>
+<!--              <th>Link</th>-->
+              <th>Shared Date</th>
+<!--              <th>File Name</th>-->
+<!--              <th>MD5 Hash</th>-->
+<!--              <th>File Size</th>-->
+<!--              <th>PG Version</th>-->
+<!--              <th>Restore Command</th>-->
+<!--              <th>DB Size</th>-->
+              <th class="wrap-text">Download Details</th>
+              <th>Upload</th>
+              <th>Status</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in records %}
+              <tr id="row-{{ r.id }}">
+                <td>{{ loop.index }}</td>
+                <td class="wrap-text">{{ r.state }}</td>
+                <td class="wrap-text">{{ r.nodal_dept or '-' }}</td>
+                <td class="wrap-text">{{ r.shared_to or r.coordinator or '-' }}</td>
+                <td>{{ r.request_date or '-' }}</td>
+                <td style="max-width:320px; white-space:normal;">{{ r.request_email or '-' }}</td>
+<!--                <td>-->
+<!--                  {% if r.is_file_available and r.file_path %}-->
+<!--                    <a class="btn btn-sm btn-outline-primary" href="{{ url_for('dump.download_datadump', token=r.download_token) }}">Download</a>-->
+<!--                  {% elif r.share_link %}-->
+<!--                    <a class="btn btn-sm btn-outline-primary" href="{{ r.share_link }}" target="_blank">Open Link</a>-->
+<!--                  {% else %}-->
+<!--                    - -->
+<!--                  {% endif %}-->
+<!--                </td>-->
+                <td>{{ r.share_date or '-' }}</td>
+<!--                <td>{{ r.file_name or '-' }}</td>-->
+<!--                <td class="wrap-text">{{ r.md5_hash or '-' }}</td>-->
+<!--                <td>{{ r.file_size or '-' }}</td>-->
+<!--                <td>{{ r.postgres_version or '-' }}</td>-->
+<!--                <td>{{ r.command_to_restore or '-' }}</td>-->
+<!--                <td>{{ r.db_size or '-' }}</td>-->
+<!--                <td style="text-align:center;">{% if r.generated_doc %}-->
+<!--                    <a href="{{ url_for('dump.download_generated', id=r.id) }}"-->
+<!--                       class="btn btn-sm btn-outline-secondary"-->
+<!--                    data-bs-toggle="tooltip" data-bs-placement="bottom"-->
+<!--                    title="Download the file, fill in your details, sign and then upload it.">-->
+<!--                    <i class="bi bi-download"></i>-->
+<!--                    </a>-->
+<!--                {% endif %}-->
+<!--                </td>-->
+                <td class="text-center" id="download-cell-{{ r.id }}">
+                  {% if r.generated_doc %}
+                    {% if r.user_doc_downloaded %}
+                      <!-- Already downloaded: show green tick -->
+                      <span title="Downloaded" class="text-success">
+                        <i class="bi bi-check-circle-fill fs-5"></i>
+                      </span>
+                    {% else %}
+                      <!-- Not downloaded yet: show button that triggers mark->download -->
+                      <button class="btn btn-sm btn-outline-secondary btn-download-generated"
+                              data-id="{{ r.id }}"
+                              data-download-url="{{ url_for('dump.download_generated', id=r.id) }}">
+                        <i class="bi bi-download"></i>
+                      </button>
+                    {% endif %}
+                  {% else %}
+                    <!-- no generated doc -->
+                    <span class="text-muted small">-</span>
+                  {% endif %}
+                </td>
+
+                <!-- Upload cell: show only if record provided and downloaded -->
+                <td class="wrap-text" id="upload-cell-{{ r.id }}">
+                  {% if r.status == "PROVIDED" and r.user_doc_downloaded %}
+                    <!-- Show upload form (you had admin-only; keep that if desired) -->
+                    {% if user.role == 'admin' %}
+<!--                      <form id="upload-form-{{ r.id }}" class="upload-form" data-id="{{ r.id }}" enctype="multipart/form-data">-->
+<!--                        <input type="file" name="completed" required>-->
+<!--                        <button type="submit" class="btn btn-sm btn-primary">Upload</button>-->
+<!--                      </form>-->
+                      <form id="upload-form-{{ r.id }}" class="upload-form" data-id="{{ r.id }}" enctype="multipart/form-data">
+                        <!-- CSRF disabled globally for chatbot API compatibility -->
+                        <label class="upload-btn">
+                          <input type="file" name="completed" class="upload-input" required hidden>
+                          <span>Upload</span>
+                        </label>
+                      </form>
+
+
+                    {% else %}
+                      <span class="text-muted small">Awaiting upload by admin</span>
+                    {% endif %}
+                  {% elif r.status == "PROVIDED" and not r.user_doc_downloaded %}
+                    <span class="text-muted small">Please download & sign to upload</span>
+                  {% elif r.status == "ACKNOWLEDGED" %}
+                    <span class="text-success small">Uploaded</span>
+                  {% else %}
+                    <span class="text-muted small">-</span>
+                  {% endif %}
+                </td>
+
+                <td id="status-cell-{{ r.id }}" style="text-align:center;">
+                  <span class="badge
+                    {% if r.status=='REQUESTED' %}bg-warning
+                    {% elif r.status=='PROVIDED' %}bg-success
+                    {% elif r.status=='REJECTED' %}bg-danger
+                    {% elif r.status=='ACKNOWLEDGED' %}bg-secondary
+                    {% endif %}">
+                    {{ r.status }}
+                  </span>
+                </td>
+
+                <td class="text-end">
+                  {% if role == 'admin' %}
+                    {% if r.status == 'REQUESTED' %}
+                      <button class="btn btn-sm btn-outline-danger me-1" data-bs-toggle="modal"
+                              data-bs-target="#rejectModal" data-id="{{ r.id }}">Reject</button>
+                      <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal"
+                              data-bs-target="#provideModal" data-id="{{ r.id }}">Provide</button>
+                    {% else %}
+                      <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal"
+                              data-bs-target="#provideModal" data-id="{{ r.id }}">Update</button>
+                    {% endif %}
+                  {% elif role in ['modifier','reviewer'] and r.state == user.state_name %}
+                    <span class="text-muted small">State record</span>
+                  {% else %}
+                    <span class="text-muted small">-</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="12" class="text-center">No records found</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Reject Modal -->
+  <div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+      <form class="modal-content" id="rejectForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Reject Request</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <!-- CSRF disabled globally for chatbot API compatibility -->
+          <input type="hidden" id="rejectRecordId" name="record_id">
+          <label class="form-label">Remarks (optional)</label>
+          <textarea class="form-control" name="remarks" rows="3"></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-danger" type="submit">Reject</button>
+          <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Provide Modal -->
+  <div class="modal fade" id="provideModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <form class="modal-content" id="provideForm" enctype="multipart/form-data">
+        <div class="modal-header">
+          <h5 class="modal-title">Provide Data Dump</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body row g-3">
+          <!-- CSRF disabled globally for chatbot API compatibility -->
+          <input type="hidden" name="record_id" id="provideRecordId">
+
+          <div class="col-md-6">
+            <label class="form-label">Share Mode</label>
+            <select name="share_mode" class="form-select">
+              <option value="">Select</option>
+              <option value="upload">Upload</option>
+              <option value="link">External Link</option>
+              <option value="email">Email</option>
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Share Link (optional)</label>
+            <input class="form-control" name="share_link" placeholder="https://...">
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Shared To (recipient)</label>
+            <input class="form-control" name="shared_to" placeholder="Recipient or dept" required />
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Upload File (optional)</label>
+            <input type="file" class="form-control" name="file">
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">MD5 Hash</label>
+            <input class="form-control" name="md5_hash" required />
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">File Name</label>
+            <input class="form-control" name="file_name" required />
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">File Size</label>
+            <input class="form-control" name="file_size" placeholder="e.g. 16 GB" required />
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">DB Size</label>
+            <input class="form-control" name="db_size" placeholder="e.g. 16 GB" required />
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Period Shared (optional)</label>
+            <input class="form-control" name="period_shared" placeholder="e.g. 2020-2024" >
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">File Format</label>
+            <input class="form-control" name="file_format" placeholder="e.g. Linux gzip format" required />
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Postgres Version</label>
+            <input class="form-control" name="postgres_version" placeholder="e.g. 12.x" required />
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Restore Command</label>
+            <input class="form-control" name="command_to_restore" placeholder="Command to retrieve the data in a new DB" />
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">Remarks (optional)</label>
+            <textarea class="form-control" name="remarks" rows="2"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-success" type="submit">Save & Provide</button>
+          <button class="btn btn-outline-dark" type="button" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Request Data Dump Modal -->
+  <div class="modal fade" id="requestModal" tabindex="-1">
+    <div class="modal-dialog">
+      <form id="submitRequestForm" class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Request Data Dump</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <!-- CSRF disabled globally for chatbot API compatibility -->
+
+          <div class="mb-3">
+            <label class="form-label">State</label>
+            <select name="state" id="req_state" class="form-select" required>
+              <option value="">-- Select State --</option>
+              {% for s in states  %}
+                <option value="{{ s }}">{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- NODAL DEPARTMENT -->
+          <div class="mb-3">
+            <label class="form-label">Nodal Department</label>
+            <input type="text" name="nodal_dept" class="form-control" placeholder="Enter Nodal Department" required>
+          </div>
+
+          <!-- COORDINATOR -->
+          <div class="mb-3">
+            <label class="form-label">Coordinator</label>
+            <input type="text" name="coordinator" class="form-control" placeholder="Enter Coordinator Email ID/ Name" required/>
+          </div>
+
+          <!-- REQUEST DATE -->
+          <div class="mb-3">
+            <label class="form-label">Request Date</label>
+<!--            <input type="date" name="request_date" class="form-control" value="{{ current_date }}" readonly>-->
+            <input type="date" name="request_date" class="form-control" max="{{ current_date }}">
+          </div>
+
+
+          <!-- REQUEST DETAILS -->
+          <div class="mb-3">
+            <label class="form-label">Request Details</label>
+            <textarea
+              name="request_email"
+              class="form-control"
+              rows="4"
+              placeholder="Describe what data you need"
+              required></textarea>
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Submit Request</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer class="text-light py-4 mt-4" style="background-color: #003366;">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4 small">Designed and Developed by El</div>
+        <div class="col-md-4 text-center">
+          <a href="#" class="text-light">Version 1.0</a>
+        </div>
+        <div class="col-md-4 text-end">
+  <!--        <a href="#" class="text-light me-3">Contact Us</a>-->
+        </div>
+      </div>
+
+      <hr class="border-light">
+
+      <div class="row">
+        <div class="col-md-4 small mb-0"></div>
+        <p class="col-md-4 text-center small mb-0">&copy; 2025 GePNIC. </p>
+        <div class="col-md-4 small mb-0 text-end">
+          <span><i class="bi bi-shield-lock"></i> Internal Use</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</div>
+<script>
+  // --- Helper: show a simple bootstrap toast-like inline alert then reload ---
+  function showMessageAndReload(msg, isError=false) {
+    if (isError) {
+      alert('Error: ' + msg);
+    } else {
+      // small success visual then reload
+      alert(msg);
+      location.reload();
+    }
+  }
+
+  // --- Prefill modal ids on show ---
+  var provideModal = document.getElementById('provideModal');
+  provideModal?.addEventListener('show.bs.modal', function (event) {
+    var button = event.relatedTarget;
+    var id = button.getAttribute('data-id');
+    document.getElementById('provideRecordId').value = id || '';
+  });
+
+  var rejectModal = document.getElementById('rejectModal');
+  rejectModal?.addEventListener('show.bs.modal', function (event) {
+    var button = event.relatedTarget;
+    var id = button.getAttribute('data-id');
+    document.getElementById('rejectRecordId').value = id || '';
+  });
+
+  // Helper function to safely get CSRF token
+  // Returns empty string since CSRF is disabled globally
+  function getCSRFToken() {
+    // CSRF is disabled globally for chatbot API compatibility
+    return '';
+  }
+
+  // --- Provide form (supports file) ---
+  document.getElementById('provideForm')?.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const id = document.getElementById('provideRecordId').value;
+    if (!id) return showMessageAndReload('Invalid record id', true);
+
+    const form = new FormData(e.target);
+    const csrfToken = getCSRFToken();
+    // CSRF is disabled, so we don't need to check for it
+    // POST multipart to provide endpoint
+    try {
+      const res = await fetch(`/provide_dump/${id}`, { 
+        method: 'POST', 
+        headers: {
+          'X-CSRFToken': csrfToken
+        },
+        body: form 
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        showMessageAndReload(json.message || 'Datadump provided.');
+      } else {
+        showMessageAndReload(json.error || 'Failed to provide dump', true);
+      }
+    } catch (err) {
+      showMessageAndReload(err.message || 'Network error', true);
+    }
+  });
+
+  // --- Reject form ---
+  document.getElementById('rejectForm')?.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const id = document.getElementById('rejectRecordId').value;
+    if (!id) return showMessageAndReload('Invalid record id', true);
+
+    const form = new FormData(e.target);
+    const csrfToken = getCSRFToken();
+    // CSRF is disabled, so we don't need to check for it
+    try {
+      const res = await fetch(`/reject_dump/${id}`, { 
+        method: 'POST', 
+        headers: {
+          'X-CSRFToken': csrfToken
+        },
+        body: form 
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        showMessageAndReload(json.message || 'Request rejected.');
+      } else {
+        showMessageAndReload(json.error || 'Failed to reject', true);
+      }
+    } catch (err) {
+      showMessageAndReload(err.message || 'Network error', true);
+    }
+  });
+
+  // --- Request form (AJAX) ---
+  // Disable state field for non-admin users
+  {% if user.role != 'admin' %}
+      document.addEventListener("DOMContentLoaded", function () {
+          const st = document.getElementById("req_state");
+          if (st) {
+            st.value = "{{ user.state_name }}";
+            st.setAttribute("disabled", true);
+          }
+      });
+  {% endif %}
+
+  // Submit form via AJAX
+  document.getElementById('submitRequestForm')?.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const form = new FormData(e.target);
+    const csrfToken = getCSRFToken();
+    // CSRF is disabled, so we don't need to check for it
+
+    try {
+      const res = await fetch('/request_dump', { 
+        method: 'POST', 
+        headers: {
+          'X-CSRFToken': csrfToken
+        },
+        body: form 
+      });
+      const json = await res.json();
+
+      if (res.ok && json.success) {
+        showMessageAndReload('Request submitted successfully.');
+      } else {
+        showMessageAndReload(json.error || 'Failed to submit request', true);
+      }
+    } catch (err) {
+      showMessageAndReload(err.message || 'Network error', true);
+    }
+  });
+
+
+// Small helper for alerts
+  function showMessage(msg, isError=false) {
+    if (isError) {
+      alert("Error: " + msg);
+    } else {
+      alert(msg);
+    }
+  }
+
+  // --- Download generated doc: mark -> download ---
+  document.querySelectorAll('.btn-download-generated').forEach(btn => {
+    btn.addEventListener('click', async function (e) {
+      e.preventDefault();
+      const id = this.dataset.id;
+      const downloadUrl = this.dataset.downloadUrl;
+
+      try {
+        // Mark downloaded in DB
+        const csrfToken = getCSRFToken();
+        // CSRF is disabled, so we don't need to check for it
+        const markRes = await fetch(`/mark_generated_downloaded/${id}`, { 
+          method: 'POST', 
+          headers: { 
+            'X-Requested-With':'XMLHttpRequest',
+            'X-CSRFToken': csrfToken
+          }
+        });
+        const markJson = await markRes.json();
+        if (!markRes.ok || !markJson.success) {
+           alert(markJson.error || "Failed to mark downloaded");
+          return;
+        }
+
+        // Update UI immediately
+        document.getElementById(`download-cell-${id}`).innerHTML =
+            `<span class="text-success"><i class="bi bi-check-circle-fill fs-5"></i></span>`;
+
+        window.location = downloadUrl;
+
+
+        // If upload cell shows hint "Please download & sign to upload", we should refresh upload cell
+        const uploadCell = document.getElementById(`upload-cell-${id}`);
+        if (uploadCell && uploadCell.innerText.trim().includes('Please download')) {
+          // replace with upload form if appropriate (admin view). Minimal DOM swap:
+          {% if user.role == 'admin' %}
+          const csrfToken = getCSRFToken();
+          // CSRF is disabled, so we don't need to check for it
+          uploadCell.innerHTML = `
+              <form id="upload-form-${id}" class="upload-form" data-id="${id}" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="${csrfToken}"/>
+                <input type="file" name="completed" required>
+                <button type="submit" class="btn btn-sm btn-primary">Upload</button>
+              </form>
+            `;
+          // No else clause needed since CSRF is disabled
+          // attach the upload handler to the newly created form
+          attachUploadHandler(document.getElementById(`upload-form-${id}`));
+          {% endif %}
+        }
+
+        // Start download (this will navigate away but UI is already updated)
+        window.location = downloadUrl;
+
+      } catch (err) {
+        console.error(err);
+        showMessage(err.message || 'Network error', true);
+      }
+    });
+  });
+
+  // --- Upload handler factory ---
+  function attachUploadHandler(formEl) {
+    if (!formEl) return;
+    formEl.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const id = this.dataset.id;
+      const fd = new FormData(this);
+      const csrfToken = getCSRFToken();
+      // CSRF is disabled, so we don't need to check for it
+
+      fetch(`/upload_completed/${id}`, { 
+        method: 'POST', 
+        headers: {
+          'X-CSRFToken': csrfToken
+        },
+        body: fd 
+      })
+        .then(r => r.json().then(j => ({ ok: r.ok, status: r.status, json: j })))
+        .then(result => {
+          const data = result.json;
+          if (!result.ok || !data.success) {
+            showMessage(data.error || 'Upload failed', true);
+            return;
+          }
+
+          // Success: update UI
+          const statusCell = document.getElementById(`status-cell-${id}`);
+          if (statusCell) {
+            statusCell.innerHTML = `<span class="badge bg-secondary">ACKNOWLEDGED</span>`;
+          }
+          const dlCell = document.getElementById(`download-cell-${id}`);
+          if (dlCell) {
+            dlCell.innerHTML = `<span class="text-success"><i class="bi bi-check-circle-fill fs-5"></i></span>`;
+          }
+          const uploadCell = document.getElementById(`upload-cell-${id}`);
+          if (uploadCell) {
+            uploadCell.innerHTML = `<span class="text-success small">Uploaded</span>`;
+          }
+
+          showMessage(data.message || 'Uploaded and acknowledged.');
+        })
+        .catch(err => {
+          console.error(err);
+          showMessage(err.message || 'Network error', true);
+        });
+    });
+  }
+
+  // Attach handlers to any existing upload forms on page load
+  document.querySelectorAll('.upload-form').forEach(f => attachUploadHandler(f));
+
+
+  document.addEventListener('change', function (e) {
+  if (e.target.classList.contains('upload-input')) {
+    const form = e.target.closest('form');
+    if (form) {
+      form.requestSubmit(); // triggers your existing submit handler
+    }
+  }
+});
+
+</script>
+</body>
+</html>

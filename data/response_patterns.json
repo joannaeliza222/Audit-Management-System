@@ -1,0 +1,37 @@
+{
+  "greeting": [
+    "Hello! How can I help you today?",
+    "Welcome! What can I assist you with?",
+    "Hi there! I'm here to help with your audit management questions."
+  ],
+  "technical": [
+    "I understand you're experiencing a technical issue. Let me help you with that.",
+    "This appears to be a technical matter. Let me guide you through the solution.",
+    "I can help you troubleshoot this technical problem."
+  ],
+  "process": [
+    "I can help you with this process-related question.",
+    "Let me explain the procedure for this process.",
+    "I can provide guidance on this workflow."
+  ],
+  "policy": [
+    "I can provide information about our policies and guidelines.",
+    "Let me check the relevant policy for you.",
+    "I can help you understand our compliance requirements."
+  ],
+  "data": [
+    "I can assist you with data-related queries and reports.",
+    "Let me help you with your data request.",
+    "I can guide you through data export procedures."
+  ],
+  "version": [
+    "This issue has been addressed in a specific version. Let me check that for you.",
+    "I have information about this version-specific issue.",
+    "This appears to be related to a version update."
+  ],
+  "fallback": [
+    "I apologize, but I don't have specific information about that.",
+    "Let me connect you with someone who can better assist you.",
+    "I don't have enough information to help with this specific query."
+  ]
+}

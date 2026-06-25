@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Data Dump Analytics - Enhanced AMS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='enhanced_styles.css') }}">
+</head>
+<body data-page="data-dump-analytics">
+
+<div class="app-shell">
+  <!-- Enhanced Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand text-white fw-bold" href="{{ url_for('enhanced_frontend.enhanced_index') }}">
+        <img class="logo-box" src="{{ url_for('static', filename='logo.png') }}" height="32" class="me-2" style="background-color: white; padding: 4px; border-radius: 4px;"> Audit Management System
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="bi bi-clipboard-data"></i> Query Management
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('enhanced_frontend.create_query') }}">
+                <i class="bi bi-plus-circle"></i> Create Query
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('pending.pending') }}">
+                <i class="bi bi-hourglass-split"></i> Pending Queries
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('replied.replied') }}">
+                <i class="bi bi-search"></i> Search Queries
+              </a></li>
+              {% if role == 'admin' %}
+              <li><a class="dropdown-item" href="{{ url_for('review.review_drafts') }}">
+                <i class="bi bi-book"></i> Review Answers
+              </a></li>
+              {% endif %}
+            </ul>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('futurefix.future_issues') }}">
+              <i class="bi bi-tools"></i> Upcoming Version Fixes
+            </a>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="bi bi-graph-up"></i> Analytics
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('audit_analytics.audit_analytics') }}">
+                <i class="bi bi-bar-chart"></i> Audit Analytics
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="showDataDumpAnalytics()">
+                <i class="bi bi-database"></i> Data Dump Analytics
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="showAIAnalytics()">
+                <i class="bi bi-cpu"></i> AI Performance
+              </a></li>
+            </ul>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="bi bi-file-text"></i> Documents
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="#" onclick="showDocumentUpload()">
+                <i class="bi bi-upload"></i> Upload Document
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="showKnowledgeBase()">
+                <i class="bi bi-journal-text"></i> Knowledge Base
+              </a></li>
+            </ul>
+          </li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}">
+            <i class="bi bi-box-arrow-right"></i> Logout
+          </a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="container mt-3" style="position: fixed;
+              top: 35px;left: 50%; transform: translateX(-50%);
+              z-index: 1050;">
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- Main Content -->
+  <div class="container" style="margin-top: 2rem;">
+    <div class="row">
+      <div class="col-12">
+        <div class="card-soft p-4 mb-4">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+              <h1 class="h3 m-0">Data Dump Analytics</h1>
+              <p class="text-secondary mt-2 mb-0">Comprehensive insights for data dump requests and processing</p>
+            </div>
+            <div class="d-flex gap-2">
+              <a href="{{ url_for('enhanced_frontend.enhanced_index') }}" class="btn btn-secondary">Back to Dashboard</a>
+              <button class="btn btn-primary" onclick="refreshDataDumpAnalytics()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Key Performance Indicators -->
+    <div class="row g-4 mb-4">
+      <div class="col-12 col-md-3">
+        <div class="kpi-card p-4 h-100" style="border-left: 4px solid #007bff;">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="text-secondary small">Total Requests</div>
+              <div class="kpi-number" id="total-requests">0</div>
+              <div class="text-primary small">
+                <i class="bi bi-database"></i> All time
+              </div>
+            </div>
+            <div class="kpi-icon bg-primary-subtle text-primary">
+              <i class="bi bi-database"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-3">
+        <div class="kpi-card p-4 h-100" style="border-left: 4px solid #ffc107;">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="text-secondary small">Pending Requests</div>
+              <div class="kpi-number" id="pending-requests">0</div>
+              <div class="text-warning small">
+                <i class="bi bi-hourglass-split"></i> Awaiting processing
+              </div>
+            </div>
+            <div class="kpi-icon bg-warning-subtle text-warning">
+              <i class="bi bi-hourglass-split"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-3">
+        <div class="kpi-card p-4 h-100" style="border-left: 4px solid #28a745;">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="text-secondary small">Completed Requests</div>
+              <div class="kpi-number" id="completed-requests">0</div>
+              <div class="text-success small">
+                <i class="bi bi-check-circle"></i> Successfully processed
+              </div>
+            </div>
+            <div class="kpi-icon bg-success-subtle text-success">
+              <i class="bi bi-check-circle"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-3">
+        <div class="kpi-card p-4 h-100" style="border-left: 4px solid #17a2b8;">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="text-secondary small">Avg Processing Time</div>
+              <div class="kpi-number" id="avg-processing-time">0d</div>
+              <div class="text-info small">
+                <i class="bi bi-clock"></i> Days to complete
+              </div>
+            </div>
+            <div class="kpi-icon bg-info-subtle text-info">
+              <i class="bi bi-clock"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="row g-4 mb-4">
+      <div class="col-12 col-lg-8">
+        <div class="card-soft p-4">
+          <h3 class="h5 m-0 mb-3">Daily Request Trends</h3>
+          <div class="chart-container" style="position: relative; height: 300px;">
+            <canvas id="trendsChart"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-lg-4">
+        <div class="card-soft p-4">
+          <h3 class="h5 m-0 mb-3">Request Status Distribution</h3>
+          <div class="chart-container" style="position: relative; height: 300px;">
+            <canvas id="statusChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="row g-4 mb-4">
+      <div class="col-12 col-lg-6">
+        <div class="card-soft p-4">
+          <h3 class="h5 m-0 mb-3">Requests by State</h3>
+          <div class="chart-container" style="position: relative; height: 250px;">
+            <canvas id="stateChart"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-lg-6">
+        <div class="card-soft p-4">
+          <h3 class="h5 m-0 mb-3">Processing Time Analysis</h3>
+          <div class="chart-container" style="position: relative; height: 250px;">
+            <canvas id="processingTimeChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Requests Table -->
+    <div class="row g-4">
+      <div class="col-12">
+        <div class="card-soft p-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="h5 m-0">Recent Data Dump Requests</h3>
+            <button class="btn btn-sm btn-outline-primary" onclick="refreshDataDumpAnalytics()">
+              <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>State</th>
+                  <th>Nodal Department</th>
+                  <th>Coordinator</th>
+                  <th>Status</th>
+                  <th>Request Date</th>
+                  <th>Completed Date</th>
+                  <th>Processing Time</th>
+                </tr>
+              </thead>
+              <tbody id="requestsTable">
+                <tr>
+                  <td colspan="8" class="text-center">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2">Loading data...</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Custom CSS for chart containers -->
+<style>
+.kpi-number {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.kpi-card {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.kpi-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.kpi-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.chart-container {
+    position: relative;
+    width: 100%;
+}
+
+.chart-container canvas {
+    max-height: 300px !important;
+    width: 100% !important;
+}
+
+.card-soft {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.card-soft:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+    .chart-container canvas {
+        max-height: 250px !important;
+    }
+    
+    .kpi-number {
+        font-size: 1.5rem;
+    }
+    
+    .kpi-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+}
+</style>
+
+<!-- JavaScript files -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='enhanced_scripts.js') }}"></script>
+
+<script>
+// Data Dump Analytics specific JavaScript
+class DataDumpAnalytics {
+    constructor() {
+        this.init();
+    }
+
+    init() {
+        this.loadAnalyticsData();
+        this.initializeCharts();
+    }
+
+    async loadAnalyticsData() {
+        try {
+            console.log('Loading data dump analytics...');
+            const response = await fetch('/api/data-dump-analytics');
+            console.log('Response status:', response.status);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('Received data:', data);
+            
+            if (data.success) {
+                console.log('Updating UI with analytics data...');
+                this.updateKPICards(data.analytics);
+                this.updateCharts(data.analytics);
+                this.updateRequestsTable(data.analytics.recent_requests);
+                console.log('UI update completed');
+            } else {
+                console.error('API returned error:', data.error);
+                this.showError('Failed to load analytics data: ' + (data.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error loading data dump analytics:', error);
+            this.showError('Failed to load analytics data: ' + error.message);
+        }
+    }
+
+    updateKPICards(data) {
+        document.getElementById('total-requests').textContent = data.total_requests || 0;
+        document.getElementById('pending-requests').textContent = data.pending_requests || 0;
+        document.getElementById('completed-requests').textContent = data.completed_requests || 0;
+        document.getElementById('avg-processing-time').textContent = data.avg_processing_time || 0;
+    }
+
+    initializeCharts() {
+        // Initialize charts with Chart.js
+        if (typeof Chart !== 'undefined') {
+            // Status Distribution - Pie Chart
+            const statusCtx = document.getElementById('statusChart');
+            if (statusCtx) {
+                this.statusChart = new Chart(statusCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            data: [],
+                            backgroundColor: [
+                                '#ffc107', // yellow - requested
+                                '#17a2b8', // cyan - processing  
+                                '#28a745', // green - completed
+                                '#dc3545', // red - failed
+                                '#6c757d'  // gray - other
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 15,
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Requests by State - Bar Chart
+            const stateCtx = document.getElementById('stateChart');
+            if (stateCtx) {
+                this.stateChart = new Chart(stateCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Number of Requests',
+                            data: [],
+                            backgroundColor: '#007bff',
+                            borderColor: '#0056b3',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1,
+                                    font: {
+                                        size: 11
+                                    }
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    font: {
+                                        size: 11
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Daily Trends - Line Chart
+            const trendsCtx = document.getElementById('trendsChart');
+            if (trendsCtx) {
+                this.trendsChart = new Chart(trendsCtx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Daily Requests',
+                            data: [],
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1,
+                                    font: {
+                                        size: 11
+                                    }
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    font: {
+                                        size: 11
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Processing Time Analysis - Horizontal Bar Chart
+            const processingTimeCtx = document.getElementById('processingTimeChart');
+            if (processingTimeCtx) {
+                this.processingTimeChart = new Chart(processingTimeCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Processing Time (Days)',
+                            data: [],
+                            backgroundColor: '#17a2b8',
+                            borderColor: '#138496',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y', // This makes it a horizontal bar chart
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1,
+                                    font: {
+                                        size: 11
+                                    }
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Days',
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            },
+                            y: {
+                                ticks: {
+                                    font: {
+                                        size: 11
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    updateCharts(data) {
+        // Update Status Distribution Pie Chart
+        if (this.statusChart && data.status_distribution) {
+            const statusLabels = {
+                'requested': 'Requested',
+                'processing': 'Processing', 
+                'completed': 'Completed',
+                'failed': 'Failed'
+            };
+            
+            const labels = [];
+            const values = [];
+            
+            Object.keys(data.status_distribution).forEach(status => {
+                labels.push(statusLabels[status] || status);
+                values.push(data.status_distribution[status]);
+            });
+            
+            this.statusChart.data.labels = labels;
+            this.statusChart.data.datasets[0].data = values;
+            this.statusChart.update();
+        }
+
+        // Update Requests by State Bar Chart
+        if (this.stateChart && data.requests_by_state) {
+            const sortedStates = Object.entries(data.requests_by_state)
+                .sort((a, b) => b[1] - a[1]) // Sort by count descending
+                .slice(0, 10); // Take top 10 states
+            
+            this.stateChart.data.labels = sortedStates.map(([state]) => state);
+            this.stateChart.data.datasets[0].data = sortedStates.map(([, count]) => count);
+            this.stateChart.update();
+        }
+
+        // Update Daily Trends Line Chart
+        if (this.trendsChart) {
+            if (data.daily_trends && Object.keys(data.daily_trends).length > 0) {
+                const sortedDays = Object.keys(data.daily_trends).sort();
+                const labels = [];
+                const values = [];
+                
+                sortedDays.forEach(day => {
+                    // Format day as "Jan 15", etc.
+                    const [year, month, dayNum] = day.split('-');
+                    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                                      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    labels.push(`${monthNames[parseInt(month) - 1]} ${parseInt(dayNum)}`);
+                    values.push(data.daily_trends[day]);
+                });
+                
+                this.trendsChart.data.labels = labels;
+                this.trendsChart.data.datasets[0].data = values;
+            } else {
+                // Show empty state
+                this.trendsChart.data.labels = ['No Data Available'];
+                this.trendsChart.data.datasets[0].data = [0];
+            }
+            this.trendsChart.update();
+        }
+
+        // Update Processing Time Analysis Bar Chart
+        if (this.processingTimeChart) {
+            if (data.processing_time_analysis && Object.keys(data.processing_time_analysis).length > 0) {
+                const sortedTimes = Object.entries(data.processing_time_analysis)
+                    .sort((a, b) => a[1] - b[1]) // Sort by processing time ascending
+                    .slice(0, 10); // Take top 10
+                
+                this.processingTimeChart.data.labels = sortedTimes.map(([state]) => state);
+                this.processingTimeChart.data.datasets[0].data = sortedTimes.map(([, time]) => time);
+            } else {
+                // Show empty state
+                this.processingTimeChart.data.labels = ['No Data Available'];
+                this.processingTimeChart.data.datasets[0].data = [0];
+            }
+            this.processingTimeChart.update();
+        }
+    }
+
+    updateRequestsTable(requests) {
+        const tbody = document.getElementById('requestsTable');
+        tbody.innerHTML = '';
+
+        if (!requests || requests.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No requests found</td></tr>';
+            return;
+        }
+
+        requests.forEach(request => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${request.id}</td>
+                <td>${request.state || '-'}</td>
+                <td>${request.nodal_department || '-'}</td>
+                <td>${request.coordinator || '-'}</td>
+                <td><span class="badge bg-${this.getStatusColor(request.status)}">${request.status}</span></td>
+                <td>${request.request_date || '-'}</td>
+                <td>${request.completed_date || '-'}</td>
+                <td>${request.processing_time || '-'}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    getStatusColor(status) {
+        const colors = {
+            'requested': 'warning',
+            'processing': 'info',
+            'completed': 'success',
+            'failed': 'danger'
+        };
+        return colors[status] || 'secondary';
+    }
+
+    showError(message) {
+        // Show error message to user
+        console.error(message);
+        
+        // Create error toast
+        const toast = document.createElement('div');
+        toast.className = 'toast align-items-center text-white bg-danger border-0';
+        toast.setAttribute('role', 'alert');
+        toast.style.position = 'fixed';
+        toast.style.top = '20px';
+        toast.style.right = '20px';
+        toast.style.zIndex = '9999';
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 5000);
+    }
+}
+
+// Initialize Data Dump Analytics
+let dataDumpAnalytics;
+document.addEventListener('DOMContentLoaded', function() {
+    dataDumpAnalytics = new DataDumpAnalytics();
+});
+
+// Global function for refresh
+function refreshDataDumpAnalytics() {
+    if (dataDumpAnalytics) {
+        dataDumpAnalytics.loadAnalyticsData();
+    }
+}
+</script>
+
+</body>
+</html>
