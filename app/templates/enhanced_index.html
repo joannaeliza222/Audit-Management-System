@@ -732,6 +732,7 @@
         </div>
         <div class="modal-body">
           <form id="faqUploadForm" action="{{ url_for('auth.upload_file') }}?redirect={{ request.path }}" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div class="mb-3">
               <label for="faqFile" class="form-label">Select FAQ File</label>
               <input type="file" class="form-control" id="faqFile" name="file" accept=".xlsx,.xls,.csv" required>

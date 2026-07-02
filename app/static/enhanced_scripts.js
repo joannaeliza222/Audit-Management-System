@@ -740,7 +740,16 @@ async function askDatabase() {
             thead.innerHTML = '<tr>' + data.columns.map(col => `<th>${col}</th>`).join('') + '</tr>';
             
             tbody.innerHTML = data.rows.map(row => 
-                '<tr>' + data.columns.map(col => `<td>${row[col] !== null ? row[col] : ''}</td>`).join('') + '</tr>'
+                '<tr>' + data.columns.map(col => {
+                    const value = row[col];
+                    if (value === null || value === undefined) {
+                        return '<td></td>';
+                    } else if (typeof value === 'object') {
+                        return '<td>' + JSON.stringify(value) + '</td>';
+                    } else {
+                        return '<td>' + value + '</td>';
+                    }
+                }).join('') + '</tr>'
             ).join('');
             
             // Show results count

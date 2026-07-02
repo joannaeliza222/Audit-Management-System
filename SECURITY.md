@@ -116,7 +116,7 @@ This document outlines the security measures implemented in the Audit Management
 If you discover a security vulnerability, please report it responsibly:
 
 1. **Do NOT** create public issues for security vulnerabilities
-2. Email security details to: [security-contact@example.com]
+2. Email security details to: [ejoanna222@gmail.com]
 3. Include:
    - Description of the vulnerability
    - Steps to reproduce
@@ -165,7 +165,3 @@ Run `pip-audit` regularly to check for known vulnerabilities:
 pip install pip-audit
 pip-audit
 ```
-
-## License
-
-This security policy is part of the AMS project. See LICENSE file for details.
