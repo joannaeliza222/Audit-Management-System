@@ -253,10 +253,11 @@ If the embedding model fails to load:
 5. Open a Pull Request
 
 
-
 ## Support
 
-For issues and questions:
-- Create an issue in the repository
-- Check inline code comments for detailed documentation
-- Review `ASK_YOUR_DATABASE_SETUP.md` for natural language SQL feature setup
+For support and questions:
+- **Documentation**: Check this README and inline code comments
+- **Issues**: Create an issue in the repository
+- **Security**: Report security issues privately
+
+
