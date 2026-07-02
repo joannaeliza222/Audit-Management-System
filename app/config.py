@@ -52,8 +52,8 @@ class Config:
     SESSION_COOKIE_PARTITIONED = False  # Disable partitioned cookies for compatibility
     PERMANENT_SESSION_LIFETIME = int(os.getenv("PERMANENT_SESSION_LIFETIME", str(60 * 60 * 8)))  # 8 hours
 
-    # CSRF Protection (disabled for chatbot API compatibility)
-    WTF_CSRF_ENABLED = False  # os.getenv("WTF_CSRF_ENABLED", "true").lower() == "true"
+    # CSRF Protection (enabled for security, can be disabled per-route if needed)
+    WTF_CSRF_ENABLED = os.getenv("WTF_CSRF_ENABLED", "true").lower() == "true"
     WTF_CSRF_TIME_LIMIT = int(os.getenv("WTF_CSRF_TIME_LIMIT", "43200"))  # 12 hours
 
     # Email Verification
@@ -168,7 +168,7 @@ class DevelopmentConfig(Config):
     # Development-specific settings
     SESSION_COOKIE_SECURE = False
     SESSION_COOKIE_SAMESITE = "Lax"  # Lax for better compatibility
-    WTF_CSRF_ENABLED = True
+    # CSRF enabled in development for testing
     
     # More lenient rate limiting for development
     RATELIMIT_DEFAULT = "1000 per day, 200 per hour"
