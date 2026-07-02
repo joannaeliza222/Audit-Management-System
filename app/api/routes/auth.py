@@ -43,7 +43,7 @@ limiter = Limiter(
 )
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
-
+@limiter.limit("20 per minute")
 def login():
     if request.method == 'POST':
         email = request.form.get('email', '').strip()
@@ -133,6 +133,7 @@ def login():
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
+@limiter.limit("5 per hour")
 def register():
     if request.method == 'POST':
         email = request.form.get('email', '').strip()
@@ -267,12 +268,6 @@ def index():
         .all()
     ) if y[0]]
 
-    # distinct_years = [y[0] for y in (
-    #     db.session.query(extract('year', DraftFAQ.created_at))
-    #     .distinct().order_by(extract('year', DraftFAQ.created_at))
-    #     .all()
-    # ) if y[0]]
-
     total_states_count = len(distinct_states)
     total_dumps_count = DataDump.query.count()
     filtered_dumps_count = len(records)
@@ -396,9 +391,10 @@ def approve_user(user_id):
 
     return redirect(url_for("auth.index") + "#userapproval")
 
-TEMPLATE_SECRET = os.getenv("TEMPLATE_SECRET", secrets.token_urlsafe(32))
+TEMPLATE_SECRET = os.getenv("TEMPLATE_SECRET", secrets.token_urlsafe(32))  # Used to verify template integrity
 
 @auth_bp.route('/download-template')
+@login_required
 def download_template():
     wb = Workbook()
     ws = wb.active
