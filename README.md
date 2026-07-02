@@ -12,6 +12,7 @@ A comprehensive audit management system with AI-powered query intelligence, comm
 - **Analytics Dashboard**: Comprehensive reporting and insights on queries and commitments
 - **Natural Language SQL**: Query the database using plain English (optional, requires Ollama)
 - **Data Dump Management**: Secure handling of data dump requests and file sharing
+- **Security**: Argon2 password hashing, CSRF protection, rate limiting, input validation, document encryption
 
 ## Tech Stack
 
@@ -19,7 +20,8 @@ A comprehensive audit management system with AI-powered query intelligence, comm
 - **Database**: PostgreSQL 12+ with pgvector extension
 - **AI/ML**: Local Sentence Transformers (MiniLM-L6-v2), PyTorch
 - **Frontend**: Bootstrap 5, jQuery
-- **Security**: Argon2 password hashing, Bleach sanitization, Flask-Limiter
+- **Security**: Argon2 password hashing, Bleach sanitization, Flask-Limiter, Fernet encryption
+- **Production**: Gunicorn WSGI server, Structured logging with structlog
 
 ## System Requirements
 
@@ -96,7 +98,53 @@ flask db upgrade
 
 # Create initial admin user
 python scripts/init_db.py
+
+# Create read-only role for natural language SQL (optional)
+psql -U postgres -d ams_db -f setup_readonly_role.sql
 ```
+
+### 6. Production Deployment
+
+#### Using Gunicorn (Recommended)
+
+```bash
+# Install gunicorn (included in requirements.txt)
+pip install gunicorn
+
+# Run with gunicorn
+gunicorn --bind 0.0.0.0:5000 --workers 4 --timeout 120 run:app
+
+# Or use the production starter script
+python scripts/start_production.py
+```
+
+#### Production Configuration
+
+Set these environment variables in production:
+
+```bash
+FLASK_ENV=production
+FLASK_DEBUG=false
+GUNICORN_BIND=0.0.0.0:5000
+GUNICORN_WORKERS=4
+GUNICORN_TIMEOUT=120
+```
+
+#### Security Checklist
+
+Before deploying to production, ensure:
+
+- [ ] All placeholder passwords changed (`CHANGE_THIS_PASSWORD`)
+- [ ] Strong `SECRET_KEY` generated
+- [ ] `DOCUMENT_ENCRYPTION_KEY` generated
+- [ ] `FLASK_DEBUG=false`
+- [ ] `SESSION_COOKIE_SECURE=true`
+- [ ] `WTF_CSRF_ENABLED=true`
+- [ ] Database SSL/TLS enabled
+- [ ] HTTPS configured
+- [ ] Firewall rules configured
+
+See [SECURITY.md](SECURITY.md) for detailed security guidelines.
 
 ### 6. Optional: Natural Language SQL Setup
 
