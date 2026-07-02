@@ -46,10 +46,6 @@ def validate_password(password: str) -> tuple[bool, str | None]:
     if not re.search(r'\d', password):
         return False, "Password must contain at least one digit"
     
-    # add special character requirement
-    # if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
-    #     return False, "Password must contain at least one special character"
-    
     return True, None
 
 

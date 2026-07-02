@@ -301,17 +301,6 @@ def login_required(f):
     def decorated(*args, **kwargs):
         if 'user_id' not in session:
             return redirect(url_for('auth.login'))
-        
-        # Check session expiration for permanent sessions
-        # if session.permanent:
-        #     if 'last_activity' in session:
-        #         last_activity = session['last_activity']
-        #         if isinstance(last_activity, datetime):
-        #             if datetime.utcnow() - last_activity > timedelta(hours=8):
-        #                 session.clear()
-        #                 flash("Session expired. Please login again.", "warning")
-        #                 return redirect(url_for('auth.login'))
-        #     session['last_activity'] = datetime.utcnow()
 
         if session.permanent:
             now = datetime.now(timezone.utc)
