@@ -215,7 +215,8 @@ class NaturalLanguageDB:
             
         except Exception as e:
             # Log error safely without using current_app
-            print(f"Error processing natural language query: {str(e)}")
+            import logging
+            logging.error(f"Error processing natural language query: {str(e)}")
             return {
                 "error": "I couldn't understand your question. Please try rephrasing it.",
                 "query_type": "error",
@@ -376,7 +377,8 @@ class NaturalLanguageDB:
                 return {"error": f"Unsupported table: {table}"}
                 
         except Exception as e:
-            print(f"Query execution error: {str(e)}")
+            import logging
+            logging.error(f"Query execution error: {str(e)}")
             return {"error": "Failed to execute database query"}
     
     def _execute_faq_query(self, parsed_query: Dict) -> Dict:
@@ -432,7 +434,8 @@ class NaturalLanguageDB:
             return {"error": "Unsupported operation for FAQ"}
             
         except Exception as e:
-            print(f"FAQ query execution error: {str(e)}")
+            import logging
+            logging.error(f"FAQ query execution error: {str(e)}")
             return {"error": "Failed to execute FAQ query"}
     
     def _execute_datadump_query(self, parsed_query: Dict) -> Dict:
@@ -500,7 +503,8 @@ class NaturalLanguageDB:
             return {"error": "Unsupported operation for DataDump"}
             
         except Exception as e:
-            print(f"DataDump query execution error: {str(e)}")
+            import logging
+            logging.error(f"DataDump query execution error: {str(e)}")
             return {"error": "Failed to execute DataDump query"}
     
     def _execute_audit_query(self, parsed_query: Dict) -> Dict:

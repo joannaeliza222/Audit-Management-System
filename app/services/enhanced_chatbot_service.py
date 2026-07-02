@@ -152,7 +152,8 @@ class EnhancedChatbotService:
             
         except Exception as e:
             # Log error without using current_app (to avoid context issues)
-            print(f"Database query error: {str(e)}")
+            import logging
+            logging.error(f"Database query error: {str(e)}")
             return {
                 "response": "I couldn't process your database query. Please try rephrasing your question.",
                 "query_type": "database_error"

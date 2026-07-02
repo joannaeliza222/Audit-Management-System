@@ -54,7 +54,8 @@ class DocumentSecurityService:
             try:
                 compiled.append(re.compile(pattern, re.IGNORECASE | re.MULTILINE))
             except re.error as e:
-                print(f"Warning: Invalid regex pattern '{pattern}': {e}")
+                import logging
+                logging.warning(f"Invalid regex pattern '{pattern}': {e}")
         return compiled
     
     def detect_injection(self, text: str) -> Tuple[bool, List[str]]:
@@ -202,8 +203,9 @@ class DocumentSecurityService:
         }
         
         # This would integrate with the audit logging system
-        # For now, we'll just print a warning (in production, use proper logging)
-        print(f"SECURITY: Content sanitized - {log_entry}")
+        # For now, we'll use proper logging
+        import logging
+        logging.warning(f"SECURITY: Content sanitized - {log_entry}")
     
     def generate_safe_filename(self, filename: str) -> str:
         """

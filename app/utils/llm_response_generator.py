@@ -90,7 +90,9 @@ class LLMResponseGenerator:
             try:
                 current_app.logger.error(f"Failed to load LLM model: {e}")
             except RuntimeError:
-                print(f"Failed to load LLM model: {e}")
+                # No Flask context available - use standard logging
+                import logging
+                logging.error(f"Failed to load LLM model: {e}")
             # Fallback to template-based responses
             self.generator = None
     
@@ -127,8 +129,9 @@ class LLMResponseGenerator:
             try:
                 current_app.logger.error(f"LLM response generation error: {e}")
             except RuntimeError:
-                # No Flask context available, use print
-                print(f"LLM response generation error: {e}")
+                # No Flask context available - use standard logging
+                import logging
+                logging.error(f"LLM response generation error: {e}")
             
             return self._fallback_response(user_message, query_data)
     
