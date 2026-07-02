@@ -6,7 +6,7 @@ from werkzeug.utils import secure_filename
 from werkzeug.exceptions import RequestEntityTooLarge
 
 from ...services.document_ingestion import DocumentIngestionService
-from ...services.document_qa import DocumentQAService
+from ...services.document_qa_service import DocumentQAService
 from ...services.document_security import DocumentSecurityService
 from ...services.vector_store import VectorStoreService
 

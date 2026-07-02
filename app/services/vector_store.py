@@ -4,7 +4,7 @@ from sqlalchemy import text, and_, or_
 from sentence_transformers import SentenceTransformer
 from flask import current_app
 
-from ..document_models import DocumentChunk, Document
+from ..document_qa_models import QADocumentChunk, SecureDocument, DocumentStatus
 
 
 class VectorStoreService:
@@ -87,16 +87,15 @@ class VectorStoreService:
                 dc.document_id,
                 dc.chunk_index,
                 dc.chunk_text,
-                dc.flagged,
-                dc.token_count,
+                dc.chunk_type,
                 dc.created_at,
                 d.original_filename,
-                d.filename,
+                d.stored_filename,
                 (1 - (dc.embedding <=> :query_vector)) as similarity
-            FROM document_chunks dc
-            JOIN documents d ON dc.document_id = d.id
+            FROM qa_document_chunks dc
+            JOIN secure_documents d ON dc.document_id = d.id
             WHERE dc.user_id = :user_id
-            {"AND dc.flagged = false" if not include_flagged else ""}
+            AND d.deleted_at IS NULL
             AND (dc.embedding <=> :query_vector) <= :max_distance
             ORDER BY similarity DESC
             LIMIT :limit
@@ -121,11 +120,10 @@ class VectorStoreService:
                     'document_id': row.document_id,
                     'chunk_index': row.chunk_index,
                     'chunk_text': row.chunk_text,
-                    'flagged': row.flagged,
-                    'token_count': row.token_count,
+                    'chunk_type': row.chunk_type,
                     'created_at': row.created_at.isoformat() if row.created_at else None,
                     'original_filename': row.original_filename,
-                    'filename': row.filename,
+                    'stored_filename': row.stored_filename,
                     'similarity': float(row.similarity)
                 })
             
@@ -182,12 +180,6 @@ class VectorStoreService:
             List of chunks matching keywords
         """
         try:
-            # Build query conditions
-            conditions = [DocumentChunk.user_id == user_id]
-            
-            if not include_flagged:
-                conditions.append(DocumentChunk.flagged == False)
-            
             # Use PostgreSQL's full-text search
             query_str = f"""
             SELECT 
@@ -195,17 +187,16 @@ class VectorStoreService:
                 dc.document_id,
                 dc.chunk_index,
                 dc.chunk_text,
-                dc.flagged,
-                dc.token_count,
+                dc.chunk_type,
                 dc.created_at,
                 d.original_filename,
-                d.filename,
+                d.stored_filename,
                 ts_rank_cd(to_tsvector('english', dc.chunk_text), 
                           plainto_tsquery('english', :query_text)) as rank
-            FROM document_chunks dc
-            JOIN documents d ON dc.document_id = d.id
+            FROM qa_document_chunks dc
+            JOIN secure_documents d ON dc.document_id = d.id
             WHERE dc.user_id = :user_id
-            {"AND dc.flagged = false" if not include_flagged else ""}
+            AND d.deleted_at IS NULL
             AND to_tsvector('english', dc.chunk_text) @@ plainto_tsquery('english', :query_text)
             ORDER BY rank DESC
             LIMIT 20
@@ -228,11 +219,10 @@ class VectorStoreService:
                     'document_id': row.document_id,
                     'chunk_index': row.chunk_index,
                     'chunk_text': row.chunk_text,
-                    'flagged': row.flagged,
-                    'token_count': row.token_count,
+                    'chunk_type': row.chunk_type,
                     'created_at': row.created_at.isoformat() if row.created_at else None,
                     'original_filename': row.original_filename,
-                    'filename': row.filename,
+                    'stored_filename': row.stored_filename,
                     'similarity': float(row.rank) * 0.5,  # Scale keyword rank
                     'search_type': 'keyword'
                 })
@@ -291,18 +281,24 @@ class VectorStoreService:
             List of chunk dictionaries
         """
         try:
-            chunks = DocumentChunk.query.filter(
+            chunks = QADocumentChunk.query.filter(
                 and_(
-                    DocumentChunk.user_id == user_id,
-                    DocumentChunk.id.in_(chunk_ids)
+                    QADocumentChunk.user_id == user_id,
+                    QADocumentChunk.id.in_(chunk_ids)
                 )
             ).all()
             
             result = []
             for chunk in chunks:
-                chunk_dict = chunk.to_dict()
-                chunk_dict['original_filename'] = chunk.document.original_filename
-                result.append(chunk_dict)
+                result.append({
+                    'id': chunk.id,
+                    'document_id': chunk.document_id,
+                    'chunk_index': chunk.chunk_index,
+                    'chunk_text': chunk.chunk_text,
+                    'chunk_type': chunk.chunk_type,
+                    'created_at': chunk.created_at.isoformat() if chunk.created_at else None,
+                    'original_filename': chunk.document.original_filename if chunk.document else None
+                })
             
             return result
             
@@ -325,16 +321,15 @@ class VectorStoreService:
         """
         try:
             # Validate document ownership
-            document = Document.query.filter_by(
+            document = SecureDocument.query.filter_by(
                 id=document_id,
-                user_id=user_id,
-                is_deleted=False
-            ).first()
+                user_id=user_id
+            ).filter(SecureDocument.deleted_at.is_(None)).first()
             
             if not document:
                 return []
             
-            query = DocumentChunk.query.filter_by(
+            query = QADocumentChunk.query.filter_by(
                 document_id=document_id,
                 user_id=user_id
             )
@@ -342,16 +337,22 @@ class VectorStoreService:
             # If query text provided, filter by keywords
             if query_text:
                 query = query.filter(
-                    DocumentChunk.chunk_text.ilike(f'%{query_text}%')
+                    QADocumentChunk.chunk_text.ilike(f'%{query_text}%')
                 )
             
-            chunks = query.order_by(DocumentChunk.chunk_index).all()
+            chunks = query.order_by(QADocumentChunk.chunk_index).all()
             
             result = []
             for chunk in chunks:
-                chunk_dict = chunk.to_dict()
-                chunk_dict['original_filename'] = document.original_filename
-                result.append(chunk_dict)
+                result.append({
+                    'id': chunk.id,
+                    'document_id': chunk.document_id,
+                    'chunk_index': chunk.chunk_index,
+                    'chunk_text': chunk.chunk_text,
+                    'chunk_type': chunk.chunk_type,
+                    'created_at': chunk.created_at.isoformat() if chunk.created_at else None,
+                    'original_filename': document.original_filename
+                })
             
             return result
             
@@ -374,27 +375,23 @@ class VectorStoreService:
             
             # Document statistics
             doc_stats = db.session.query(
-                func.count(Document.id).label('total_documents'),
-                func.sum(Document.file_size).label('total_size'),
-                func.sum(Document.chunk_count).label('total_chunks')
+                func.count(SecureDocument.id).label('total_documents'),
+                func.sum(SecureDocument.file_size).label('total_size')
             ).filter_by(
-                user_id=user_id,
-                is_deleted=False
-            ).first()
+                user_id=user_id
+            ).filter(SecureDocument.deleted_at.is_(None)).first()
             
             # Chunk statistics
             chunk_stats = db.session.query(
-                func.count(DocumentChunk.id).label('total_chunks'),
-                func.sum(DocumentChunk.token_count).label('total_tokens'),
-                func.sum(func.cast(DocumentChunk.flagged, db.Integer)).label('flagged_chunks')
+                func.count(QADocumentChunk.id).label('total_chunks')
             ).filter_by(user_id=user_id).first()
             
             return {
                 'total_documents': doc_stats.total_documents or 0,
                 'total_size_bytes': doc_stats.total_size or 0,
                 'total_chunks': chunk_stats.total_chunks or 0,
-                'total_tokens': chunk_stats.total_tokens or 0,
-                'flagged_chunks': chunk_stats.flagged_chunks or 0,
+                'total_tokens': 0,
+                'flagged_chunks': 0,
                 'average_chunks_per_document': (
                     (chunk_stats.total_chunks or 0) / (doc_stats.total_documents or 1)
                 )
@@ -425,27 +422,22 @@ class VectorStoreService:
             index_queries = [
                 # Vector similarity index
                 """
-                CREATE INDEX IF NOT EXISTS idx_document_chunks_embedding 
-                ON document_chunks 
+                CREATE INDEX IF NOT EXISTS idx_qa_document_chunks_embedding 
+                ON qa_document_chunks 
                 USING ivfflat (embedding vector_cosine_ops)
                 WITH (lists = 100)
                 """,
                 
                 # Composite indexes for common queries
                 """
-                CREATE INDEX IF NOT EXISTS idx_document_chunks_user_flagged 
-                ON document_chunks (user_id, flagged)
-                """,
-                
-                """
-                CREATE INDEX IF NOT EXISTS idx_document_chunks_document_user 
-                ON document_chunks (document_id, user_id)
+                CREATE INDEX IF NOT EXISTS idx_qa_document_chunks_document_user 
+                ON qa_document_chunks (document_id, user_id)
                 """,
                 
                 # Full-text search index
                 """
-                CREATE INDEX IF NOT EXISTS idx_document_chunks_text_search 
-                ON document_chunks 
+                CREATE INDEX IF NOT EXISTS idx_qa_document_chunks_text_search 
+                ON qa_document_chunks 
                 USING gin(to_tsvector('english', chunk_text))
                 """
             ]

@@ -56,7 +56,8 @@ class NaturalLanguageSQLService:
     def __init__(self):
         self.ollama_host = current_app.config.get('OLLAMA_HOST', 'http://localhost:11434')
         self.ollama_model = current_app.config.get('OLLAMA_MODEL', 'qwen2.5-coder')
-        self.ollama_timeout = current_app.config.get('OLLAMA_TIMEOUT', 30)
+        # Force minimum timeout of 120 seconds for large schema processing
+        self.ollama_timeout = max(current_app.config.get('OLLAMA_TIMEOUT', 30), 120)
         self.query_limit = current_app.config.get('SQL_QUERY_LIMIT', 200)
         self.query_timeout = current_app.config.get('SQL_QUERY_TIMEOUT', 10)
         self.schema_cache = None
@@ -148,26 +149,38 @@ class NaturalLanguageSQLService:
         """
         schema = self.get_database_schema()
 
-        # Build schema description for the prompt
+        # Build schema description for the prompt (optimized for brevity)
         schema_description = "Database Schema:\n"
+        table_descriptions = {
+            'draftfaq': 'Main table for audit queries/drafts with status tracking (pending, admin_draft, approved, etc.)',
+            'audit_query': 'Finalized audit query records with responses',
+            'user': 'User accounts and authentication',
+            'commitment': 'Commitment tracking for audit responses',
+            'faq': 'Frequently asked questions and knowledge base',
+            'data_dump': 'Data dump requests and files',
+            'document': 'Document management and storage',
+            'future_issue_tracker': 'Future issues and version fixes tracking'
+        }
+        
         for table_name, table_info in schema.items():
-            schema_description += f"\nTable: {table_name}\n"
-            schema_description += "Columns:\n"
-            for col in table_info['columns']:
-                schema_description += f"  - {col['name']} ({col['type']})"
-                if col['nullable']:
-                    schema_description += " [nullable]"
-                if col['default']:
-                    schema_description += f" [default: {col['default']}]"
-                schema_description += "\n"
+            schema_description += f"\nTable: {table_name}"
+            if table_name in table_descriptions:
+                schema_description += f" - {table_descriptions[table_name]}"
+            schema_description += "\n"
+            schema_description += "Columns: "
+            col_names = [f"{col['name']}({col['type']})" for col in table_info['columns']]
+            schema_description += ", ".join(col_names) + "\n"
             if table_info['foreign_keys']:
-                schema_description += "Foreign Keys:\n"
-                for fk in table_info['foreign_keys']:
-                    schema_description += f"  - {fk['column']} -> {fk['foreign_table']}.{fk['foreign_column']}\n"
+                fk_info = ", ".join([f"{fk['column']}->{fk['foreign_table']}.{fk['foreign_column']}" for fk in table_info['foreign_keys']])
+                schema_description += f"Foreign Keys: {fk_info}\n"
 
         prompt = f"""You are a SQL expert. Convert the following natural language question into a valid PostgreSQL SELECT query.
 
 {schema_description}
+
+IMPORTANT TABLE GUIDANCE:
+- For questions about "pending queries", "drafts", or audit queries in progress, use the 'draftfaq' table (status column contains values like 'pending', 'admin_draft', 'approved', etc.)
+- For questions about finalized/completed audit queries with responses, use the 'audit_query' table
 
 Question: {question}
 
@@ -309,7 +322,21 @@ SQL Query:"""
             # Execute the query
             result = db.session.execute(text(sql_query))
             columns = list(result.keys())
-            rows = [dict(row) for row in result]
+            rows = []
+            for row in result:
+                # Convert Row object to dictionary
+                row_dict = {}
+                for i, col in enumerate(columns):
+                    if hasattr(row, '_mapping'):
+                        # SQLAlchemy 2.0 style
+                        row_dict[col] = row._mapping[col]
+                    elif hasattr(row, col):
+                        # SQLAlchemy 1.4 style
+                        row_dict[col] = getattr(row, col)
+                    else:
+                        # Fallback to tuple access
+                        row_dict[col] = row[i] if i < len(row) else None
+                rows.append(row_dict)
 
             # Reset statement timeout
             db.session.execute(text("SET statement_timeout = DEFAULT"))

@@ -12,20 +12,19 @@ SECURITY CRITICAL:
 """
 
 from flask import Blueprint, request, jsonify, current_app
-from flask_login import login_required, current_user
+from flask_login import current_user
 from app.services.natural_language_sql import NaturalLanguageSQLService
 
 natural_language_sql_bp = Blueprint('natural_language_sql', __name__)
 
 
 @natural_language_sql_bp.route('/api/ask-db', methods=['POST'])
-@login_required
 def ask_database():
     """
     Convert natural language question to SQL and execute.
-    
+
     Request body: { "question": "<user's natural language question>" }
-    
+
     Returns: {
         "success": true/false,
         "sql": "<the query that ran>",

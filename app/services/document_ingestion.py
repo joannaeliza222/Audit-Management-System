@@ -1,6 +1,7 @@
 import os
 import uuid
 import hashlib
+import json
 from typing import List, Dict, Tuple, Optional, BinaryIO
 from datetime import datetime
 from io import BytesIO
@@ -11,7 +12,7 @@ import docx
 from flask import current_app
 from sqlalchemy.exc import IntegrityError
 
-from ..document_models import Document, DocumentChunk, DocumentAuditLog
+from ..document_qa_models import SecureDocument, QADocumentChunk, DocumentStatus
 from .document_security import DocumentSecurityService
 
 
@@ -94,19 +95,27 @@ class DocumentIngestionService:
             safe_filename = self.security_service.generate_safe_filename(filename)
             
             # Create document record
-            document = Document(
-                user_id=user_id,
-                filename=safe_filename,
-                original_filename=filename,
-                mime_type=mime_type,
-                file_size=len(file_content),
-                content_hash=hashlib.sha256(file_content).hexdigest()
-            )
+            stored_filename = f"{uuid.uuid4().hex}{self._get_file_extension(filename)}"
+            upload_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+            file_path = os.path.join(upload_folder, stored_filename)
             
-            # Encrypt and store content
-            # Convert hex key to bytes for Fernet
-            encryption_key_bytes = bytes.fromhex(self.encryption_key)
-            document.encrypted_content = document.encrypt_content(file_content, encryption_key_bytes)
+            # Ensure upload folder exists
+            os.makedirs(upload_folder, exist_ok=True)
+            
+            # Save file to disk
+            with open(file_path, 'wb') as f:
+                f.write(file_content)
+            
+            document = SecureDocument(
+                user_id=user_id,
+                original_filename=filename,
+                stored_filename=stored_filename,
+                file_path=file_path,
+                file_size=len(file_content),
+                mime_type=mime_type,
+                file_hash=hashlib.sha256(file_content).hexdigest(),
+                status=DocumentStatus.processing
+            )
             
             # Save document
             from .. import db
@@ -122,45 +131,42 @@ class DocumentIngestionService:
             
             # Save chunks with embeddings
             chunk_models = []
-            document_has_injection = False
             
             for i, chunk_data in enumerate(chunks):
-                chunk_model = DocumentChunk(
+                chunk_model = QADocumentChunk(
                     document_id=document.id,
                     user_id=user_id,
                     chunk_index=i,
                     chunk_text=chunk_data['text'],
                     embedding=chunk_embeddings[i],
-                    flagged=chunk_data['flagged'],
-                    token_count=chunk_data['token_count']
+                    chunk_type='text'
                 )
                 chunk_models.append(chunk_model)
-                
-                if chunk_data['flagged']:
-                    document_has_injection = True
             
             # Update document metadata
-            document.chunk_count = len(chunks)
-            document.has_injection_attempt = document_has_injection
+            document.status = DocumentStatus.ready
+            document.processing_completed_at = datetime.utcnow()
+            document.extracted_text_length = len(text_content)
             
             # Save all chunks
             db.session.add_all(chunk_models)
             
             # Log the upload
-            DocumentAuditLog.log_event(
+            from ..document_qa_models import DocumentAccessLog
+            access_log = DocumentAccessLog(
                 user_id=user_id,
-                event_type='upload',
                 document_id=document.id,
-                event_data={
+                action='upload',
+                ip_address=ip_address,
+                user_agent=user_agent,
+                additional_data=json.dumps({
                     'filename': filename,
                     'file_size': len(file_content),
                     'mime_type': mime_type,
-                    'chunk_count': len(chunks),
-                    'has_injection': document_has_injection
-                },
-                ip_address=ip_address,
-                user_agent=user_agent
+                    'chunk_count': len(chunks)
+                })
             )
+            db.session.add(access_log)
             
             db.session.commit()
             
@@ -168,8 +174,7 @@ class DocumentIngestionService:
                 'success': True,
                 'document_id': document.id,
                 'status': 'uploaded',
-                'chunk_count': len(chunks),
-                'has_injection': document_has_injection
+                'chunk_count': len(chunks)
             }
             
         except IntegrityError as e:
@@ -200,12 +205,19 @@ class DocumentIngestionService:
         Returns:
             List of document metadata
         """
-        documents = Document.query.filter_by(
-            user_id=user_id,
-            is_deleted=False
-        ).order_by(Document.upload_time.desc()).all()
+        documents = SecureDocument.query.filter_by(
+            user_id=user_id
+        ).filter(SecureDocument.deleted_at.is_(None)).order_by(SecureDocument.created_at.desc()).all()
         
-        return [doc.to_dict() for doc in documents]
+        return [{
+            'id': doc.id,
+            'original_filename': doc.original_filename,
+            'file_size': doc.file_size,
+            'mime_type': doc.mime_type,
+            'status': doc.status.value if doc.status else None,
+            'created_at': doc.created_at.isoformat() if doc.created_at else None,
+            'chunk_count': doc.chunks.count()
+        } for doc in documents]
     
     def delete_document(self, user_id: int, document_id: str, 
                        ip_address: str = None, user_agent: str = None) -> Dict:
@@ -223,11 +235,10 @@ class DocumentIngestionService:
         """
         try:
             # Get document
-            document = Document.query.filter_by(
+            document = SecureDocument.query.filter_by(
                 id=document_id,
-                user_id=user_id,
-                is_deleted=False
-            ).first()
+                user_id=user_id
+            ).filter(SecureDocument.deleted_at.is_(None)).first()
             
             if not document:
                 return {
@@ -236,23 +247,25 @@ class DocumentIngestionService:
                 }
             
             # Get chunk count for logging
-            chunk_count = len(document.chunks)
+            chunk_count = document.chunks.count()
             
             # Mark document as deleted (soft delete)
-            document.is_deleted = True
+            document.soft_delete()
             
             # Log the deletion
-            DocumentAuditLog.log_event(
+            from ..document_qa_models import DocumentAccessLog
+            access_log = DocumentAccessLog(
                 user_id=user_id,
-                event_type='delete',
                 document_id=document_id,
-                event_data={
+                action='delete',
+                ip_address=ip_address,
+                user_agent=user_agent,
+                additional_data=json.dumps({
                     'filename': document.original_filename,
                     'chunk_count': chunk_count
-                },
-                ip_address=ip_address,
-                user_agent=user_agent
+                })
             )
+            db.session.add(access_log)
             
             from .. import db
             db.session.commit()
@@ -270,6 +283,12 @@ class DocumentIngestionService:
                 'success': False,
                 'error': 'Internal server error'
             }
+    
+    def _get_file_extension(self, filename: str) -> str:
+        """Extract file extension from filename"""
+        if '.' in filename:
+            return '.' + filename.rsplit('.', 1)[1].lower()
+        return ''
     
     def _validate_upload(self, file_buffer: BinaryIO, filename: str, mime_type: str) -> Dict:
         """Validate file upload"""
@@ -424,23 +443,21 @@ class DocumentIngestionService:
         Returns:
             Decrypted text content or None
         """
-        document = Document.query.filter_by(
+        document = SecureDocument.query.filter_by(
             id=document_id,
-            user_id=user_id,
-            is_deleted=False
-        ).first()
+            user_id=user_id
+        ).filter(SecureDocument.deleted_at.is_(None)).first()
         
         if not document:
             return None
         
         try:
-            encrypted_content = document.encrypted_content
-            # Convert hex key to bytes for Fernet
-            encryption_key_bytes = bytes.fromhex(self.encryption_key)
-            decrypted_content = document.decrypt_content(encryption_key_bytes)
-            return decrypted_content.decode('utf-8', errors='ignore')
+            # Read file from disk
+            with open(document.file_path, 'rb') as f:
+                file_content = f.read()
+            return file_content.decode('utf-8', errors='ignore')
         except Exception as e:
-            current_app.logger.error(f"Error decrypting document: {e}")
+            current_app.logger.error(f"Error reading document: {e}")
             return None
     
     def get_document_chunks(self, user_id: int, document_id: str, 
@@ -456,13 +473,17 @@ class DocumentIngestionService:
         Returns:
             List of chunk dictionaries
         """
-        query = DocumentChunk.query.filter_by(
+        query = QADocumentChunk.query.filter_by(
             document_id=document_id,
             user_id=user_id
         )
         
-        if not include_flagged:
-            query = query.filter_by(flagged=False)
-        
-        chunks = query.order_by(DocumentChunk.chunk_index).all()
-        return [chunk.to_dict() for chunk in chunks]
+        chunks = query.order_by(QADocumentChunk.chunk_index).all()
+        return [{
+            'id': chunk.id,
+            'document_id': chunk.document_id,
+            'chunk_index': chunk.chunk_index,
+            'chunk_text': chunk.chunk_text,
+            'chunk_type': chunk.chunk_type,
+            'created_at': chunk.created_at.isoformat() if chunk.created_at else None
+        } for chunk in chunks]

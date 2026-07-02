@@ -11,13 +11,23 @@ class Config:
     # Core Security
     SECRET_KEY = os.getenv("SECRET_KEY")
     if not SECRET_KEY or SECRET_KEY == "default_fallback_key":
-        raise ValueError(
-            "SECRET_KEY must be set in environment. "
-            "Generate with: python -c 'import secrets; print(secrets.token_hex(32))'"
-        )
+        if os.getenv("FLASK_ENV") == "production":
+            raise ValueError(
+                "SECRET_KEY must be set in environment for production. "
+                "Generate with: python -c 'import secrets; print(secrets.token_hex(32))'"
+            )
+        else:
+            # Development fallback
+            SECRET_KEY = "dev-secret-key-change-in-production"
 
     # Database
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
+    if not SQLALCHEMY_DATABASE_URI:
+        if os.getenv("FLASK_ENV") == "production":
+            raise ValueError("DATABASE_URL must be set in environment for production")
+        else:
+            # Development fallback
+            SQLALCHEMY_DATABASE_URI = "sqlite:///dev.db"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # File Uploads
@@ -105,17 +115,29 @@ class Config:
     # Document Management Configuration
     DOCUMENT_ENCRYPTION_KEY = os.getenv("DOCUMENT_ENCRYPTION_KEY")
     if not DOCUMENT_ENCRYPTION_KEY:
-        raise ValueError("DOCUMENT_ENCRYPTION_KEY must be set in environment for document encryption.")
+        if os.getenv("FLASK_ENV") == "production":
+            raise ValueError("DOCUMENT_ENCRYPTION_KEY must be set in environment for document encryption.")
+        else:
+            # Development fallback
+            DOCUMENT_ENCRYPTION_KEY = "dev-encryption-key-32-bytes-long-1234"
     ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
     MAX_FILE_SIZE_MB = int(os.getenv("MAX_FILE_SIZE_MB", "20"))
     TOP_K_CHUNKS = int(os.getenv("TOP_K_CHUNKS", "5"))
     DOCUMENT_SIMILARITY_THRESHOLD = float(os.getenv("DOCUMENT_SIMILARITY_THRESHOLD", "0.72"))
     AUDIT_SALT = os.getenv("AUDIT_SALT")
     if not AUDIT_SALT:
-        raise ValueError("AUDIT_SALT must be set in environment for audit logging.")
+        if os.getenv("FLASK_ENV") == "production":
+            raise ValueError("AUDIT_SALT must be set in environment for audit logging.")
+        else:
+            # Development fallback
+            AUDIT_SALT = "dev-audit-salt-32-bytes-long-12345"
     ERASURE_SECRET = os.getenv("ERASURE_SECRET")
     if not ERASURE_SECRET:
-        raise ValueError("ERASURE_SECRET must be set in environment for GDPR compliance.")
+        if os.getenv("FLASK_ENV") == "production":
+            raise ValueError("ERASURE_SECRET must be set in environment for GDPR compliance.")
+        else:
+            # Development fallback
+            ERASURE_SECRET = "dev-erasure-secret-32-bytes-1234"
     
     # Document allowed MIME types
     DOCUMENT_ALLOWED_MIME_TYPES = set(os.getenv(
@@ -126,7 +148,7 @@ class Config:
     # Ask Your Database (Natural Language SQL) Configuration
     OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
     OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5-coder")
-    OLLAMA_TIMEOUT = int(os.getenv("OLLAMA_TIMEOUT", "30"))
+    OLLAMA_TIMEOUT = int(os.getenv("OLLAMA_TIMEOUT", "120"))
     SQL_QUERY_LIMIT = int(os.getenv("SQL_QUERY_LIMIT", "200"))
     SQL_QUERY_TIMEOUT = int(os.getenv("SQL_QUERY_TIMEOUT", "10"))
     READ_ONLY_DB_URI = os.getenv("READ_ONLY_DB_URI")  # Separate read-only database connection for safety

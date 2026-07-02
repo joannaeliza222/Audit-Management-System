@@ -109,3 +109,19 @@ instance/
 *.pfx
 *.crt
 *.cer
+
+# Python version management
+.python-version
+.pyenv
+
+# Modern Python tools
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node modules (if any frontend tools)
+node_modules/
+package-lock.json
+yarn.lock

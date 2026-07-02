@@ -45,10 +45,9 @@ def create_app(config_name=None):
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'
     
-    # Initialize CSRF protection (disabled globally for chatbot compatibility)
-    # CSRF will be handled manually for forms that need it
-    # if app.config.get('WTF_CSRF_ENABLED', False):
-    #     csrf.init_app(app)
+    # Initialize CSRF protection
+    if app.config.get('WTF_CSRF_ENABLED', False):
+        csrf.init_app(app)
 
     # Initialize CORS
     cors_origins = app.config.get('CORS_ORIGINS', ['*'])
@@ -78,20 +77,6 @@ def create_app(config_name=None):
         import logging
         logging.basicConfig(level=logging.INFO)
         app.logger.info("Basic logging configured (utils not available)")
-    
-    # Setup advanced rate limiting
-    # try:
-    #     from app.utils.rate_limiting import RateLimitMiddleware
-    #     rate_limit_middleware = RateLimitMiddleware(app)
-    # except ImportError:
-    #     app.logger.warning("Rate limiting middleware not available")
-    
-    # Setup monitoring and metrics
-    # try:
-    #     from app.utils.monitoring import PerformanceMonitor
-    #     performance_monitor = PerformanceMonitor(app)
-    # except ImportError:
-    #     app.logger.warning("Performance monitoring not available")
     
     # Request tracking
     @app.before_request

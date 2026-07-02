@@ -6,4 +6,4 @@ app = create_app()
 
 if __name__ == "__main__":
     # Never hardcode debug=True; use config/env only.
-    app.run(debug=app.config.get('DEBUG', True), host='0.0.0.0', port=int(os.getenv('PORT', 5000)))
+    app.run(debug=app.config.get('DEBUG', False), host='0.0.0.0', port=int(os.getenv('PORT', 5000)))

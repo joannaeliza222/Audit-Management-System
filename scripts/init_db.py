@@ -31,22 +31,22 @@ def init_database():
         print("All tables created successfully!")
         
         # Check if admin user already exists
-        admin_email = "admin@tn.gov.in"
+        admin_email = os.getenv('INITIAL_ADMIN_EMAIL', 'admin@example.com')
         existing_admin = User.query.filter_by(email=admin_email).first()
         
         if existing_admin:
             print(f"Admin user {admin_email} already exists!")
             return False
         
-        print("Creating initial admin user from Tamil Nadu...")
+        print("Creating initial admin user...")
         
-        # Create TN admin user
+        # Create admin user
         admin_user = User(
-            name="Tamil Nadu Administrator",
+            name=os.getenv('INITIAL_ADMIN_NAME', 'Administrator'),
             email=admin_email,
             password=hash_password(os.getenv('INITIAL_ADMIN_PASSWORD', secrets.token_urlsafe(16))),
             role="admin",
-            state_name="Tamil Nadu",
+            state_name=os.getenv('INITIAL_ADMIN_STATE', 'Default'),
             is_approved=True,
             email_verified=True
         )
@@ -66,7 +66,8 @@ def init_database():
             print("Admin user created successfully!")
             print(f"   Email: {admin_email}")
             print(f"   Password: Set via INITIAL_ADMIN_PASSWORD environment variable")
-            print(f"   State: Tamil Nadu")
+            print(f"   Name: {admin_user.name}")
+            print(f"   State: {admin_user.state_name}")
             print(f"   Role: admin")
             return True
         except Exception as e:
@@ -138,8 +139,8 @@ def create_sample_data():
             
             if not existing:
                 faq = FAQ(
-                    question=faq_data["question"],
-                    norm_question=faq_data["question"].lower().strip(),
+                    subject=faq_data["question"],
+                    norm_query=faq_data["question"].lower().strip(),
                     reply=faq_data["reply"],
                     state_name=faq_data["state_name"],
                     memo_id=faq_data["memo_id"]
@@ -178,7 +179,7 @@ if __name__ == "__main__":
         
         print("\nSetup completed successfully!")
         print("You can now login with:")
-        print("   Email: admin@tn.gov.in")
+        print(f"   Email: {admin_email}")
         print("   Password: Set via INITIAL_ADMIN_PASSWORD environment variable")
     else:
         print("\nDatabase initialization failed!")

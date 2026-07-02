@@ -25,12 +25,10 @@ def get_versioned_response_for_question(question):
     similar_issues = []
     issues = FutureIssueTracker.query.filter(
         FutureIssueTracker.status == 'addressed'
-    ).filter(
-        FutureIssueTracker.resolution_version.isnot(None)
     ).all()
     
     for issue in issues:
-        if issue.description and issue.resolution_version:
+        if issue.description:
             # Simple text similarity check
             if normalized_q.lower() in normalize_text(issue.description).lower() or \
                normalize_text(issue.description).lower() in normalized_q.lower():
@@ -46,10 +44,9 @@ def get_versioned_response_for_question(question):
         
         return {
             'has_versioned_response': True,
-            'suggested_response': latest_issue.template_response or 
-                               f"This issue has been rectified in version {latest_issue.resolution_version}.",
-            'version_info': latest_issue.resolution_version,
-            'fix_date': latest_issue.resolution_date,
+            'suggested_response': f"This issue has been addressed. {latest_issue.note or ''}",
+            'version_info': latest_issue.version_fixed,
+            'fix_date': latest_issue.version_detected,
             'confidence': 'high'
         }
     

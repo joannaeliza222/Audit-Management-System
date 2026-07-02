@@ -714,11 +714,18 @@ async function askDatabase() {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ question: question })
+            body: JSON.stringify({ question: question }),
+            credentials: 'same-origin'
         });
         
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Server returned non-JSON response. You may need to log in again.');
+        }
+
         const data = await response.json();
-        
+
         // Hide loading state
         document.getElementById('sqlLoading').style.display = 'none';
         
