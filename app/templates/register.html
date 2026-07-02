@@ -22,7 +22,7 @@
       <div class="login-box">
         <h2>Register</h2>
         <form method="POST">
-          <!-- CSRF disabled globally for chatbot API compatibility -->
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
           <input type="text" class="form-control" id="name" name="name" placeholder="User Name" required />
           <input type="email" class="form-control" id="email" name="email" placeholder="Email Id" required />
