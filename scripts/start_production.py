@@ -43,7 +43,15 @@ def run_celery_worker():
         
         # Configure Celery
         celery = Celery('ams')
-        celery.config_from_object('celeryconfig')
+        # Note: celeryconfig.py is optional - skip if not configured
+        try:
+            celery.config_from_object('celeryconfig')
+        except ImportError:
+            print("celeryconfig.py not found, using default configuration")
+            celery.conf.update(
+                broker_url=os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0'),
+                result_backend=os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
+            )
         
         # Start worker
         celery.worker_main([
@@ -66,7 +74,15 @@ def run_celery_beat():
         
         # Configure Celery
         celery = Celery('ams')
-        celery.config_from_object('celeryconfig')
+        # Note: celeryconfig.py is optional - skip if not configured
+        try:
+            celery.config_from_object('celeryconfig')
+        except ImportError:
+            print("celeryconfig.py not found, using default configuration")
+            celery.conf.update(
+                broker_url=os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0'),
+                result_backend=os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
+            )
         
         # Start beat scheduler
         celery.worker_main([
@@ -85,7 +101,7 @@ def check_environment():
     print("Checking production environment...")
     
     # Check required environment variables
-    required_vars = ['SECRET_KEY', 'DATABASE_URL', 'FLASK_ENV']
+    required_vars = ['SECRET_KEY', 'DATABASE_URL']
     missing_vars = []
     
     for var in required_vars:
@@ -97,16 +113,19 @@ def check_environment():
         return False
     
     # Check Flask environment
-    if os.getenv('FLASK_ENV') != 'production':
-        print("⚠ FLASK_ENV is not set to 'production'")
+    if os.getenv('FLASK_ENV') == 'production':
+        print("⚠ FLASK_ENV is deprecated, use FLASK_DEBUG=False instead")
+    if os.getenv('FLASK_DEBUG', 'false').lower() == 'true':
+        print("⚠ FLASK_DEBUG is True in production - set to False")
     
     # Check database connectivity
     try:
         from app import create_app, db
-        app = create_app('production')
+        from sqlalchemy import text
+        app = create_app()
         
         with app.app_context():
-            db.session.execute(db.text("SELECT 1"))
+            db.session.execute(text("SELECT 1"))
             print("✓ Database connection successful")
     except Exception as e:
         print(f"✗ Database connection failed: {e}")
