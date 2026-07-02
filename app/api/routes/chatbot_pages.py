@@ -5,6 +5,7 @@ from app.utils.embeddings import login_required
 chatbot_pages_bp = Blueprint('chatbot_pages', __name__)
 
 @chatbot_pages_bp.route('/enhanced-chatbot')
+@login_required
 def enhanced_chatbot():
     """Enhanced AI Chatbot page"""
     import time

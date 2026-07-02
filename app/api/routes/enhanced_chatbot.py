@@ -20,6 +20,8 @@ limiter = Limiter(
 enhanced_chatbot_bp = Blueprint('enhanced_chatbot', __name__)
 
 @enhanced_chatbot_bp.route('/chat', methods=['POST'])
+@login_required
+@limiter.limit("30 per minute")
 def chat():
     """
     Enhanced chat endpoint with Claude AI integration and fallbacks
@@ -378,13 +380,15 @@ def _handle_database_query_direct(message: str, user_id: str, state_name: str) -
                         'intent_type': 'database_query'
                     }
                 except Exception as e:
-                    print(f"State FAQ count error: {str(e)}")
+                    import logging
+                    logging.error(f"State FAQ count error: {str(e)}")
                     return {'error': 'Database query failed'}
         
         return None  # No matching database query pattern
         
     except Exception as e:
-        print(f"Direct database query error: {str(e)}")
+        import logging
+        logging.error(f"Direct database query error: {str(e)}")
         return {'error': 'Database query failed'}
 
 @enhanced_chatbot_bp.route('/chat/clear', methods=['POST'])
