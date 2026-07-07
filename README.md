@@ -35,8 +35,8 @@ A comprehensive audit management system with AI-powered query intelligence, comm
 ### 1. Clone the Repository
 
 ```bash
-git clone <repository-url>
-cd AMS
+git clone https://github.com/joannaeliza222/Audit-Management-System.git
+cd Audit-Management-System
 ```
 
 ### 2. Create Virtual Environment
@@ -64,7 +64,7 @@ Edit `.env` with your configuration. Required variables:
 # Core Configuration
 FLASK_ENV=production
 SECRET_KEY=your-secret-key-here  # Generate with: python -c 'import secrets; print(secrets.token_hex(32))'
-DATABASE_URL=postgresql+psycopg2://postgres:password@localhost:5432/ams_db
+DATABASE_URL=postgresql+psycopg2://postgres:CHANGE_THIS_PASSWORD@localhost:5432/ams_db?sslmode=require
 
 # Security
 SESSION_COOKIE_SECURE=true
@@ -78,7 +78,7 @@ ERASURE_SECRET=your-erasure-secret  # Generate with: python -c 'import secrets; 
 
 # File Uploads
 UPLOAD_FOLDER=/path/to/uploads
-MAX_CONTENT_LENGTH=64424509400  # 60GB
+MAX_CONTENT_LENGTH=524288000  # 500MB
 
 # CORS (comma-separated list, use * only for development)
 CORS_ORIGINS=https://yourdomain.com

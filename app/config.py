@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BASE_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+os.environ['TRANSFORMERS_OFFLINE'] = '1'
+os.environ['HF_DATASETS_OFFLINE'] = '1'
 
 class Config:
     """Base configuration"""
@@ -33,7 +35,7 @@ class Config:
     # File Uploads
     UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER", os.path.join(BASE_DIR, "uploads"))
     ALLOWED_EXTENSIONS = {'xls', 'xlsx', 'csv'}
-    MAX_CONTENT_LENGTH = int(os.getenv("MAX_CONTENT_LENGTH", str(60 * 1024 * 1024 * 1024)))  # 60GB
+    MAX_CONTENT_LENGTH = int(os.getenv("MAX_CONTENT_LENGTH", str(500 * 1024 * 1024)))  # 500MB
 
     # Data Dump Configuration
     DATADUMP_GENERATED_FOLDER = os.getenv("DATADUMP_GENERATED_FOLDER")
@@ -50,7 +52,7 @@ class Config:
     SESSION_COOKIE_SAMESITE = os.getenv("SESSION_COOKIE_SAMESITE", "Lax")  # Lax for better compatibility
     SESSION_COOKIE_DOMAIN = None  # Allow cookies to work across all domains (including IP addresses)
     SESSION_COOKIE_PARTITIONED = False  # Disable partitioned cookies for compatibility
-    PERMANENT_SESSION_LIFETIME = int(os.getenv("PERMANENT_SESSION_LIFETIME", str(60 * 60 * 8)))  # 8 hours
+    PERMANENT_SESSION_LIFETIME = int(os.getenv("PERMANENT_SESSION_LIFETIME", str(60 * 60 * 2)))  # 2 hours
 
     # CSRF Protection (enabled for security, can be disabled per-route if needed)
     WTF_CSRF_ENABLED = os.getenv("WTF_CSRF_ENABLED", "true").lower() == "true"
@@ -237,6 +239,12 @@ class ProductionConfig(Config):
     # Production should use Redis for rate limiting
     RATELIMIT_STORAGE_URL = os.getenv("REDIS_URL", "memory://")
     
+    def __init__(self):
+        super().__init__()
+        # Remove all fallbacks in production
+        if not SECRET_KEY or SECRET_KEY.startswith('dev-'):
+            raise ValueError("Production SECRET_KEY must be set and not use development fallback")
+            
     @classmethod
     def init_app(cls, app):
         Config.init_app(app)
