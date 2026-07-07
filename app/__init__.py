@@ -122,9 +122,6 @@ def create_app(config_name=None):
     from app.api.routes.datadump import dump_bp
     app.register_blueprint(dump_bp)
 
-    from app.api.routes.futurefix import futurefix_bp
-    app.register_blueprint(futurefix_bp)
-    
     # Register commitment dashboard blueprint
     from app.api.routes.commitment_dashboard import commitment_dashboard_bp
     app.register_blueprint(commitment_dashboard_bp)
@@ -149,11 +146,7 @@ def create_app(config_name=None):
     from app.api.routes.audit_analytics import audit_analytics_bp
     app.register_blueprint(audit_analytics_bp)
     
-    # Register version fixes blueprint
-    from app.api.routes.version_fixes import version_fixes_bp
-    app.register_blueprint(version_fixes_bp)
-    
-    # Register future issues blueprint
+    # Register future issues blueprint (consolidated from futurefix.py, version_fixes.py, future_issues.py)
     from app.api.routes.future_issues import future_issues_bp
     app.register_blueprint(future_issues_bp)
     

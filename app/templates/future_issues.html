@@ -46,7 +46,7 @@
             </ul>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('futurefix.future_issues') }}">
+            <a class="nav-link" href="{{ url_for('future_issues.future_issues') }}">
               <i class="bi bi-tools"></i> Upcoming Version Fixes
             </a>
           </li>
@@ -110,7 +110,7 @@
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
           <h2 class="h4 m-0">Upcoming Version Fixes</h2>
           {% if can_mark_addressed %}
-          <a href="{{ url_for('version_fixes.version_fixes', scan='true', redirect='future_issues') }}" class="btn btn-primary btn-sm">
+          <a href="{{ url_for('future_issues.version_fixes', scan='true', redirect='future_issues') }}" class="btn btn-primary btn-sm">
             <i class="bi bi-search"></i> Scan for Future Issues
           </a>
           {% endif %}
