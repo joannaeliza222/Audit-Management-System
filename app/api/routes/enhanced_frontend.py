@@ -75,10 +75,10 @@ def get_dashboard_stats():
         ).scalar() or 0
         
         # Count total states
-        total_states = db.session.query(func.count(func.distinct(DraftFAQ.state_name))).filter(
+        total_states = int(db.session.query(func.count(func.distinct(DraftFAQ.state_name))).filter(
             DraftFAQ.state_name.isnot(None),
             DraftFAQ.state_name != ''
-        ).scalar() or 0
+        ).scalar() or 0)
         
         # Calculate changes (placeholder for now)
         pending_change = 12.5
