@@ -121,8 +121,8 @@ def _load_embedding_model():
             return _tokenizer, _model
 
         # Load model (only one thread reaches here)
-        _tokenizer = AutoTokenizer.from_pretrained(_EMBEDDING_MODEL_NAME)
-        _model = AutoModel.from_pretrained(_EMBEDDING_MODEL_NAME)
+        _tokenizer = AutoTokenizer.from_pretrained(_EMBEDDING_MODEL_NAME, local_files_only=True)
+        _model = AutoModel.from_pretrained(_EMBEDDING_MODEL_NAME, local_files_only=True)
         _model.eval()
         _model.to(_get_device())
         return _tokenizer, _model

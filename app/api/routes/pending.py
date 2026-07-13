@@ -12,6 +12,7 @@ from app.utils.embeddings import login_required, current_user, fetch_data, get_r
     allowed_file, add_log, encode_text
 from flask import current_app
 from app.utils.validation import validate_file_mime, validate_file_size
+from app import csrf
 
 def get_versioned_response_for_question(question):
     """Check if question has been addressed in future issues"""
@@ -369,6 +370,7 @@ def get_pending_questions():
 
 
 @pending_bp.route("/api/save_pending", methods=["POST"])
+@csrf.exempt
 @login_required
 def save_pending():
     user = current_user()
@@ -431,6 +433,7 @@ def save_pending():
 
 
 @pending_bp.route("/api/bulk_save", methods=["POST"])
+@csrf.exempt
 @login_required
 def bulk_save():
     """Save multiple draft replies at once"""
@@ -516,6 +519,7 @@ def bulk_save():
 
 
 @pending_bp.route("/api/delete_pending", methods=["POST"])
+@csrf.exempt
 @login_required
 def delete_pending():
     user = current_user()

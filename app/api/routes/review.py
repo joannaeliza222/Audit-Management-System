@@ -8,6 +8,7 @@ from app.utils.embeddings import login_required, normalize_text, \
     detect_future_issue, create_future_issue, get_role, current_user, set_embedding_for_model, is_admin, is_modifier, \
     get_bert_embeddings, is_reviewer, add_log, normalize, encode_text
 from app.utils.vector_support import serialize_vector
+from app import csrf
 
 review_bp = Blueprint("review", __name__)
 
@@ -149,6 +150,7 @@ def review_drafts():
 
 
 @review_bp.route("/api/merge_draft", methods=["POST"])
+@csrf.exempt
 @login_required
 def merge_draft():
     if not is_admin():
@@ -342,6 +344,7 @@ def bulk_merge():
 
 
 @review_bp.route("/api/delete_draft", methods=["POST"])
+@csrf.exempt
 @login_required
 def delete_draft():
     data = request.get_json()
@@ -373,6 +376,7 @@ def delete_draft():
 
 
 @review_bp.route("/api/save_pending", methods=["POST"])
+@csrf.exempt
 @login_required
 def save_pending_review():
     """Save draft reply from review page"""
@@ -493,6 +497,7 @@ def bulk_save_review():
 
 
 @review_bp.route("/api/bulk_delete", methods=["POST"])
+@csrf.exempt
 @login_required
 def bulk_delete():
     if not is_admin():
