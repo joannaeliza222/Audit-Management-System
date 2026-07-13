@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <!-- CSRF disabled globally for chatbot API compatibility -->
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>Review Drafts - Admin</title>
 
   <link href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}" rel="stylesheet">
@@ -222,10 +222,10 @@
     const selectAll = document.getElementById('select_all');
     const floatingPanel = document.getElementById('floatingPanel');
     
-    // Helper function to safely get CSRF token (disabled globally)
+    // Helper function to safely get CSRF token
     function getCSRFToken() {
-      // CSRF is disabled globally for chatbot API compatibility
-      return null;
+      const metaTag = document.querySelector('meta[name="csrf-token"]');
+      return metaTag ? metaTag.getAttribute('content') : '';
     }
 
     // Utility: get selected ids as numbers
@@ -270,10 +270,12 @@
         return;
       }
       try {
+        const csrfToken = getCSRFToken();
         const res = await fetch('/api/save_pending', {
           method: 'POST',
           headers: { 
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
           },
           body: JSON.stringify({ id, reply })
         });
@@ -294,10 +296,12 @@
       const reply = document.getElementById(`reply_${id}`).value.trim();
       if (!confirm(`Merge draft ID ${id}?`)) return;
       try {
+        const csrfToken = getCSRFToken();
         const res = await fetch('/api/merge_draft', {
           method: 'POST',
           headers: { 
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
           },
           body: JSON.stringify({ id, reply })
         });
@@ -321,10 +325,12 @@
     async function deleteDraft(id) {
       if (!confirm(`Are you sure you want to delete draft ID ${id}?`)) return;
       try {
+        const csrfToken = getCSRFToken();
         const res = await fetch('/api/delete_draft', {
           method: 'POST',
           headers: { 
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
           },
           body: JSON.stringify({ id })
         });
@@ -364,10 +370,12 @@
       }
 
       try {
+        const csrfToken = getCSRFToken();
         const res = await fetch('/api/bulk_save', {
           method: 'POST',
           headers: { 
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
           },
           body: JSON.stringify({ drafts })
         });
@@ -394,10 +402,12 @@
       if (!confirm(`Merge ${ids.length} drafts into FAQ?`)) return;
 
       try {
+        const csrfToken = getCSRFToken();
         const res = await fetch('/api/bulk_merge', {
           method: 'POST',
           headers: { 
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
           },
           body: JSON.stringify({ ids })
         });
@@ -424,10 +434,12 @@
       if (!confirm(`Delete ${ids.length} selected drafts? This cannot be undone.`)) return;
 
       try {
+        const csrfToken = getCSRFToken();
         const res = await fetch('/api/bulk_delete', {
           method: 'POST',
           headers: { 
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
           },
           body: JSON.stringify({ ids })
         });

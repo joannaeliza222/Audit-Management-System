@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- CSRF disabled globally for chatbot API compatibility -->
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>Audit Management System - Pending Questions</title>
   <link href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}" rel="stylesheet">
   <link href="{{ url_for('static', filename='vendor/bootstrap/bootstrap-icons.css') }}" rel="stylesheet">
@@ -208,6 +208,7 @@
         </div>
         <div class="modal-body">
           <form id="faqUploadForm" action="{{ url_for('auth.upload_file') }}?redirect={{ request.path }}" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div class="mb-3">
               <label for="faqFile" class="form-label">Select FAQ File</label>
               <input type="file" class="form-control" id="faqFile" name="file" accept=".xlsx,.xls,.csv" required>
@@ -322,10 +323,12 @@ async function saveReply(id) {
   }
 
   try {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
     const res = await fetch(`/api/save_pending`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken
       },
       body: JSON.stringify({ id, reply })
     });
@@ -361,10 +364,12 @@ async function saveReply(id) {
 // Delete pending question
 async function deletePending(id) {
   if (!confirm("Are you sure you want to delete this question?")) return;
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
   const res = await fetch(`/api/delete_pending`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      "X-CSRFToken": csrfToken
     },
     body: JSON.stringify({ id })
   });

@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Create Query - Enhanced AMS</title>
     <link href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='vendor/bootstrap/bootstrap-icons.css') }}" rel="stylesheet">
@@ -119,6 +120,7 @@
                             </div>
                             <div class="card-body">
                                 <form method="POST" action="{{ url_for('enhanced_frontend.create_query') }}" id="createQueryForm">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="mb-3">

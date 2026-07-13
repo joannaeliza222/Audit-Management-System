@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <!-- CSRF disabled globally for chatbot API compatibility -->
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>Data Dump - Audit Management System</title>
 
   <link href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}" rel="stylesheet">
@@ -395,8 +395,8 @@
         </div>
 
         <div class="modal-body">
-          <!-- CSRF disabled globally for chatbot API compatibility -->
           <input type="hidden" id="rejectRecordId" name="record_id">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <label class="form-label">Remarks (optional)</label>
           <textarea class="form-control" name="remarks" rows="3"></textarea>
         </div>
@@ -419,8 +419,8 @@
         </div>
 
         <div class="modal-body row g-3">
-          <!-- CSRF disabled globally for chatbot API compatibility -->
           <input type="hidden" name="record_id" id="provideRecordId">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
           <div class="col-md-6">
             <label class="form-label">Share Mode</label>
@@ -511,8 +511,7 @@
         </div>
 
         <div class="modal-body">
-          <!-- CSRF disabled globally for chatbot API compatibility -->
-
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <div class="mb-3">
             <label class="form-label">State</label>
             <select name="state" id="req_state" class="form-select" required>
@@ -612,10 +611,9 @@
   });
 
   // Helper function to safely get CSRF token
-  // Returns empty string since CSRF is disabled globally
   function getCSRFToken() {
-    // CSRF is disabled globally for chatbot API compatibility
-    return '';
+    const metaTag = document.querySelector('meta[name="csrf-token"]');
+    return metaTag ? metaTag.getAttribute('content') : '';
   }
 
   // --- Provide form (supports file) ---
@@ -626,7 +624,6 @@
 
     const form = new FormData(e.target);
     const csrfToken = getCSRFToken();
-    // CSRF is disabled, so we don't need to check for it
     // POST multipart to provide endpoint
     try {
       const res = await fetch(`/provide_dump/${id}`, { 
