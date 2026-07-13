@@ -384,6 +384,7 @@
 
     <!-- JavaScript files -->
     <script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
     <script src="{{ url_for('static', filename='enhanced_scripts.js') }}"></script>
     <script>
         // Audit Analytics JavaScript
@@ -415,12 +416,18 @@
             renderTrendChart() {
                 const trendData = {{ trend_chart_data|tojson if trend_chart_data else 'null' }};
                 if (trendData) {
-                    Plotly.newPlot('trendChart', trendData.data, trendData.layout, {
-                        responsive: true,
-                        displayModeBar: false,
-                        staticPlot: false
-                    });
-                    console.log('Trend chart rendered successfully');
+                    const ctx = document.getElementById('trendChart');
+                    if (ctx) {
+                        new Chart(ctx, {
+                            type: 'line',
+                            data: trendData.data,
+                            options: trendData.layout || {
+                                responsive: true,
+                                maintainAspectRatio: false
+                            }
+                        });
+                        console.log('Trend chart rendered successfully');
+                    }
                 } else {
                     console.error('No trend chart data available');
                 }
@@ -429,12 +436,18 @@
             renderBarChart() {
                 const barData = {{ bar_chart_data|tojson if bar_chart_data else 'null' }};
                 if (barData) {
-                    Plotly.newPlot('barChart', barData.data, barData.layout, {
-                        responsive: true,
-                        displayModeBar: false,
-                        staticPlot: false
-                    });
-                    console.log('Bar chart rendered successfully');
+                    const ctx = document.getElementById('barChart');
+                    if (ctx) {
+                        new Chart(ctx, {
+                            type: 'bar',
+                            data: barData.data,
+                            options: barData.layout || {
+                                responsive: true,
+                                maintainAspectRatio: false
+                            }
+                        });
+                        console.log('Bar chart rendered successfully');
+                    }
                 } else {
                     console.error('No bar chart data available');
                 }
