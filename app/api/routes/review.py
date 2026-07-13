@@ -428,6 +428,7 @@ def save_pending_review():
 
 
 @review_bp.route("/api/bulk_save", methods=["POST"])
+@csrf.exempt
 @login_required
 def bulk_save_review():
     """Bulk save draft replies from review page"""
