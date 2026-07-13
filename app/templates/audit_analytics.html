@@ -303,15 +303,16 @@
                     <div class="col-12">
                         <div class="card-soft p-3">
                             <h5 class="h6 mb-3">Daily Incoming Queries Trend</h5>
-                            <div id="trendChart" style="width: 100%; height: 400px;">
-                                {% if trend_chart_data %}
-                                    <!-- Chart will be rendered by JavaScript -->
-                                {% else %}
+                            <div style="width: 100%; height: 400px;">
+                                <canvas id="trendChart">
+                                    {% if trend_chart_data %}
+                                    {% else %}
+                                    </canvas>
                                     <p class="text-center text-danger small">
-                                        <i class="bi bi-exclamation-triangle"></i> 
+                                        <i class="bi bi-exclamation-triangle"></i>
                                         Failed to generate trend chart
                                     </p>
-                                {% endif %}
+                                    {% endif %}
                             </div>
                         </div>
                     </div>
@@ -321,15 +322,16 @@
                     <div class="col-12">
                         <div class="card-soft p-3">
                             <h5 class="h6 mb-3">Query Status by State</h5>
-                            <div id="barChart" style="width: 100%; height: 400px;">
-                                {% if bar_chart_data %}
-                                    <!-- Chart will be rendered by JavaScript -->
-                                {% else %}
+                            <div style="width: 100%; height: 400px;">
+                                <canvas id="barChart">
+                                    {% if bar_chart_data %}
+                                    {% else %}
+                                    </canvas>
                                     <p class="text-center text-danger small">
-                                        <i class="bi bi-exclamation-triangle"></i> 
+                                        <i class="bi bi-exclamation-triangle"></i>
                                         Failed to generate chart
                                     </p>
-                                {% endif %}
+                                    {% endif %}
                             </div>
                         </div>
                     </div>
@@ -421,7 +423,7 @@
                         new Chart(ctx, {
                             type: 'line',
                             data: trendData.data,
-                            options: trendData.layout || {
+                            options: trendData.options || {
                                 responsive: true,
                                 maintainAspectRatio: false
                             }
@@ -441,7 +443,7 @@
                         new Chart(ctx, {
                             type: 'bar',
                             data: barData.data,
-                            options: barData.layout || {
+                            options: barData.options || {
                                 responsive: true,
                                 maintainAspectRatio: false
                             }

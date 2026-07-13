@@ -174,7 +174,7 @@ def filtered_charts():
 
 
 def generate_trend_chart_data(state_analytics, days=30):
-    """Generate interactive trend chart data for Plotly.js"""
+    """Generate trend chart data for Chart.js"""
     try:
         if not state_analytics:
             return None
@@ -208,64 +208,61 @@ def generate_trend_chart_data(state_analytics, days=30):
             incoming_queries.append(daily_incoming)
             answered_queries.append(daily_answered)
         
-        # Create interactive Plotly chart data with real data
+        # Create Chart.js compatible data
         chart_data = {
-            'data': [
-                {
-                    'x': dates,
-                    'y': incoming_queries,
-                    'type': 'scatter',
-                    'mode': 'lines+markers',
-                    'name': 'Daily Incoming Queries',
-                    'line': {
-                        'color': '#0077be',
-                        'width': 3
+            'data': {
+                'labels': dates,
+                'datasets': [
+                    {
+                        'label': 'Daily Incoming Queries',
+                        'data': incoming_queries,
+                        'borderColor': '#0077be',
+                        'backgroundColor': 'rgba(0, 119, 190, 0.3)',
+                        'fill': True,
+                        'tension': 0.4
                     },
-                    'marker': {
-                        'size': 6,
-                        'color': '#0077be'
+                    {
+                        'label': 'Daily Answered Queries',
+                        'data': answered_queries,
+                        'borderColor': '#28a745',
+                        'backgroundColor': 'rgba(40, 167, 69, 0.1)',
+                        'fill': False,
+                        'tension': 0.4
+                    }
+                ]
+            },
+            'options': {
+                'responsive': True,
+                'maintainAspectRatio': False,
+                'plugins': {
+                    'title': {
+                        'display': True,
+                        'text': 'Daily Incoming Queries Trend (Last 30 Days)',
+                        'font': {'size': 16, 'family': 'Poppins'}
                     },
-                    'fill': 'tozeroy',
-                    'fillcolor': 'rgba(0, 119, 190, 0.3)',
-                    'hovertemplate': '<b>Date:</b> %{x}<br><b>Incoming:</b> %{y}<extra></extra>'
+                    'legend': {
+                        'position': 'top'
+                    }
                 },
-                {
-                    'x': dates,
-                    'y': answered_queries,
-                    'type': 'scatter',
-                    'mode': 'lines+markers',
-                    'name': 'Daily Answered Queries',
-                    'line': {
-                        'color': '#28a745',
-                        'width': 3
+                'scales': {
+                    'x': {
+                        'title': {
+                            'display': True,
+                            'text': 'Date'
+                        },
+                        'ticks': {
+                            'maxRotation': 45,
+                            'minRotation': 45
+                        }
                     },
-                    'marker': {
-                        'size': 6,
-                        'color': '#28a745'
-                    },
-                    'hovertemplate': '<b>Date:</b> %{x}<br><b>Answered:</b> %{y}<extra></extra>'
+                    'y': {
+                        'title': {
+                            'display': True,
+                            'text': 'Number of Queries'
+                        },
+                        'beginAtZero': True
+                    }
                 }
-            ],
-            'layout': {
-                'title': {
-                    'text': 'Daily Incoming Queries Trend (Last 30 Days)',
-                    'font': {'size': 16, 'family': 'Poppins'}
-                },
-                'xaxis': {
-                    'title': 'Date',
-                    'tickangle': -45,
-                    'showgrid': True,
-                    'gridcolor': 'rgba(0,0,0,0.1)'
-                },
-                'yaxis': {
-                    'title': 'Number of Queries',
-                    'showgrid': True,
-                    'gridcolor': 'rgba(0,0,0,0.1)'
-                },
-                'hovermode': 'x unified',
-                'plot_bgcolor': 'white',
-                'paper_bgcolor': 'white',
-                'margin': {'t': 50, 'b': 100, 'l': 60, 'r': 40}
             }
         }
         
@@ -277,7 +274,7 @@ def generate_trend_chart_data(state_analytics, days=30):
 
 
 def generate_bar_chart_data(state_analytics):
-    """Generate interactive bar chart data for Plotly.js"""
+    """Generate bar chart data for Chart.js"""
     try:
         if not state_analytics:
             return None
@@ -289,61 +286,59 @@ def generate_bar_chart_data(state_analytics):
         pending = [s['pending'] for s in top_states]
         under_review = [s['under_review'] for s in top_states]
         
-        # Create interactive Plotly chart data
+        # Create Chart.js compatible data
         chart_data = {
-            'data': [
-                {
-                    'x': states,
-                    'y': answered,
-                    'name': 'Answered',
-                    'type': 'bar',
-                    'marker': {'color': '#45B7D1'},
-                    'hovertemplate': '<b>State:</b> %{x}<br><b>Answered:</b> %{y}<extra></extra>'
+            'data': {
+                'labels': states,
+                'datasets': [
+                    {
+                        'label': 'Answered',
+                        'data': answered,
+                        'backgroundColor': '#45B7D1'
+                    },
+                    {
+                        'label': 'Pending',
+                        'data': pending,
+                        'backgroundColor': '#FFD93D'
+                    },
+                    {
+                        'label': 'Under Review',
+                        'data': under_review,
+                        'backgroundColor': '#96CEB4'
+                    }
+                ]
+            },
+            'options': {
+                'responsive': True,
+                'maintainAspectRatio': False,
+                'plugins': {
+                    'title': {
+                        'display': True,
+                        'text': 'Query Status by State',
+                        'font': {'size': 16, 'family': 'Poppins'}
+                    },
+                    'legend': {
+                        'position': 'top'
+                    }
                 },
-                {
-                    'x': states,
-                    'y': pending,
-                    'name': 'Pending',
-                    'type': 'bar',
-                    'marker': {'color': '#FFD93D'},
-                    'hovertemplate': '<b>State:</b> %{x}<br><b>Pending:</b> %{y}<extra></extra>'
-                },
-                {
-                    'x': states,
-                    'y': under_review,
-                    'name': 'Under Review',
-                    'type': 'bar',
-                    'marker': {'color': '#96CEB4'},
-                    'hovertemplate': '<b>State:</b> %{x}<br><b>Under Review:</b> %{y}<extra></extra>'
-                }
-            ],
-            'layout': {
-                'title': {
-                    'text': 'Query Status by State',
-                    'font': {'size': 16, 'family': 'Poppins'}
-                },
-                'xaxis': {
-                    'title': 'States',
-                    'tickangle': -45,
-                    'showgrid': True,
-                    'gridcolor': 'rgba(0,0,0,0.1)'
-                },
-                'yaxis': {
-                    'title': 'Number of Queries',
-                    'showgrid': True,
-                    'gridcolor': 'rgba(0,0,0,0.1)'
-                },
-                'barmode': 'group',
-                'hovermode': 'x unified',
-                'plot_bgcolor': 'white',
-                'paper_bgcolor': 'white',
-                'margin': {'t': 50, 'b': 100, 'l': 60, 'r': 40},
-                'legend': {
-                    'orientation': 'h',
-                    'yanchor': 'bottom',
-                    'y': 1.02,
-                    'xanchor': 'right',
-                    'x': 1
+                'scales': {
+                    'x': {
+                        'title': {
+                            'display': True,
+                            'text': 'States'
+                        },
+                        'ticks': {
+                            'maxRotation': 45,
+                            'minRotation': 45
+                        }
+                    },
+                    'y': {
+                        'title': {
+                            'display': True,
+                            'text': 'Number of Queries'
+                        },
+                        'beginAtZero': True
+                    }
                 }
             }
         }
