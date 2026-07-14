@@ -223,7 +223,7 @@ def merge_draft():
 
     except Exception as e:
         db.session.rollback()
-        app.logger.exception("Failed merging draft")
+        current_app.logger.exception("Failed merging draft")
         return jsonify({"message": f"Failed merging draft: {str(e)}"}), 500
 
     add_log(f"{user_email} merged draft ID {draft_id} into FAQ", user_email)
@@ -371,7 +371,7 @@ def delete_draft():
 
     except Exception as e:
         db.session.rollback()
-        app.logger.exception("Error deleting draft")
+        current_app.logger.exception("Error deleting draft")
         return jsonify({"success": False, "message": f"Error deleting draft: {str(e)}"}), 500
 
 
@@ -408,7 +408,10 @@ def save_pending_review():
         draft.status = DraftStatus.admin_draft
         draft.modified_by = user_email
         draft.modified_at = datetime.utcnow()
-        draft.embedding = encode_text(draft.subject)
+        # Try to generate embedding, but don't fail if model not available
+        embedding = encode_text(draft.subject)
+        if embedding is not None:
+            draft.embedding = embedding
         db.session.commit()
         
         # If the reply contains future-issue phrase, create tracker
@@ -420,7 +423,7 @@ def save_pending_review():
             )
     except Exception as e:
         db.session.rollback()
-        app.logger.exception("Failed to save draft reply")
+        current_app.logger.exception("Failed to save draft reply")
         return jsonify({"message": f"Failed to save reply: {str(e)}"}), 500
 
     add_log(f"{user_email} saved reply for draft ID {draft_id} on review page", user_email)
@@ -468,7 +471,10 @@ def bulk_save_review():
             draft.status = DraftStatus.admin_draft
             draft.modified_by = user_email
             draft.modified_at = datetime.utcnow()
-            draft.embedding = encode_text(draft.subject)
+            # Try to generate embedding, but don't fail if model not available
+            embedding = encode_text(draft.subject)
+            if embedding is not None:
+                draft.embedding = embedding
             successes.append(draft_id)
             
             # If the reply contains future-issue phrase, create tracker
@@ -520,7 +526,7 @@ def bulk_delete():
         db.session.commit()
     except Exception as e:
         db.session.rollback()
-        app.logger.exception("Bulk delete failed")
+        current_app.logger.exception("Bulk delete failed")
         return jsonify({"message": f"Bulk delete failed: {str(e)}"}), 500
 
     return jsonify(results), 200

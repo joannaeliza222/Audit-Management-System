@@ -108,6 +108,7 @@ def _load_embedding_model():
     Thread-safe lazy-load tokenizer/model once per process.
     Uses double-checked locking to prevent race conditions in multi-threaded environments.
     Note: this uses local HF cache; for fully offline deployments, pre-populate the cache.
+    Returns None if model cannot be loaded (offline environment without cached model).
     """
     global _tokenizer, _model
     # Fast path: check without lock if already loaded
@@ -121,11 +122,16 @@ def _load_embedding_model():
             return _tokenizer, _model
 
         # Load model (only one thread reaches here)
-        _tokenizer = AutoTokenizer.from_pretrained(_EMBEDDING_MODEL_NAME, local_files_only=True)
-        _model = AutoModel.from_pretrained(_EMBEDDING_MODEL_NAME, local_files_only=True)
-        _model.eval()
-        _model.to(_get_device())
-        return _tokenizer, _model
+        try:
+            _tokenizer = AutoTokenizer.from_pretrained(_EMBEDDING_MODEL_NAME, local_files_only=True)
+            _model = AutoModel.from_pretrained(_EMBEDDING_MODEL_NAME, local_files_only=True)
+            _model.eval()
+            _model.to(_get_device())
+            return _tokenizer, _model
+        except (OSError, EnvironmentError) as e:
+            # Model not in cache and cannot download (offline environment)
+            current_app.logger.error(f"Cannot load embedding model: {e}. Semantic search will be disabled.")
+            return None, None
 
 
 def _mean_pool(last_hidden_state: torch.Tensor, attention_mask: torch.Tensor) -> torch.Tensor:
@@ -181,13 +187,16 @@ def get_bert_embeddings(text: str):
         return None
     
     text = str(text)
- 
+
     # Near-duplicate control + cache key stability
     key = normalize_text(text)
     cached = _cache_get(key)
     if cached is not None:
         return cached
     tokenizer, model = _load_embedding_model()
+    if tokenizer is None or model is None:
+        # Model not available, return None
+        return None
     inputs = tokenizer(text, return_tensors='pt', padding=True, truncation=True, max_length=512)
     inputs = {k: v.to(_get_device()) for k, v in inputs.items()}
     with torch.no_grad():
@@ -447,6 +456,9 @@ def find_related_questions(question, reply, memo_id, state_name):
 
     # Get embedding for search text
     search_emb = get_bert_embeddings(search_text)
+    if search_emb is None:
+        # Model not available, return empty results
+        return []
     search_emb = normalize(search_emb)
 
     # Base query to get all potential FAQs
@@ -493,9 +505,9 @@ def find_related_questions_scored(question, reply, memo_id, state_name):
 
     # Get embedding for search text
     search_emb = get_bert_embeddings(search_text)
-    search_emb = normalize(search_emb)
     if search_emb is None:
         return []
+    search_emb = normalize(search_emb)
 
     # Base query to get all potential FAQs
     query = FAQ.query
@@ -647,6 +659,8 @@ def get_embedding(texts):
 
 def encode_text(text):
     vec = get_bert_embeddings(text)
+    if vec is None:
+        return None
     vec = normalize(vec)
     return vec.tobytes()
 

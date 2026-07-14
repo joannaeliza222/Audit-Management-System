@@ -413,7 +413,10 @@ def save_pending():
         draft.status = DraftStatus.admin_draft
         draft.modified_by = user_email
         draft.modified_at = datetime.utcnow()
-        draft.embedding = encode_text(draft.subject)
+        # Try to generate embedding, but don't fail if model not available
+        embedding = encode_text(draft.subject)
+        if embedding is not None:
+            draft.embedding = embedding
         db.session.commit()
         # After saving, if reply suggests future-fix, create tracker entry
         if detect_future_issue(reply):
@@ -425,7 +428,7 @@ def save_pending():
             )
     except Exception as e:
         db.session.rollback()
-        app.logger.exception("Failed to save pending reply")
+        current_app.logger.exception("Failed to save pending reply")
         return jsonify({"message": f"Failed to save reply: {str(e)}"}), 500
 
     add_log(f"{user_email} saved reply for draft ID {draft_id} (moved to admin drafts)", user_email)
@@ -488,7 +491,10 @@ def bulk_save():
             draft.status = DraftStatus.admin_draft
             draft.modified_by = user_email
             draft.modified_at = datetime.utcnow()
-            draft.embedding = encode_text(draft.subject)
+            # Try to generate embedding, but don't fail if model not available
+            embedding = encode_text(draft.subject)
+            if embedding is not None:
+                draft.embedding = embedding
             successes.append(draft_id)
             
             # After saving, if reply suggests future-fix, create tracker entry
