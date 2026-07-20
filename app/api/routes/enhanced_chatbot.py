@@ -151,7 +151,7 @@ def _handle_database_query_direct(message: str, user_id: str, state_name: str) -
                     'intent_type': 'database_query'
                 }
             except Exception as e:
-                print(f"FAQ count error: {str(e)}")
+                current_app.logger.error(f"FAQ count error: {str(e)}")
                 return {'error': 'Database query failed'}
         
         # Handle user count queries (admin only)
@@ -168,7 +168,7 @@ def _handle_database_query_direct(message: str, user_id: str, state_name: str) -
                         'intent_type': 'database_query'
                     }
                 except Exception as e:
-                    print(f"User count error: {str(e)}")
+                    current_app.logger.error(f"User count error: {str(e)}")
                     return {'error': 'Database query failed'}
             else:
                 return {
@@ -192,7 +192,7 @@ def _handle_database_query_direct(message: str, user_id: str, state_name: str) -
                     'intent_type': 'database_query'
                 }
             except Exception as e:
-                print(f"DataDump count error: {str(e)}")
+                current_app.logger.error(f"DataDump count error: {str(e)}")
                 return {'error': 'Database query failed'}
         
         # Handle audit query counts
@@ -208,7 +208,7 @@ def _handle_database_query_direct(message: str, user_id: str, state_name: str) -
                     'intent_type': 'database_query'
                 }
             except Exception as e:
-                print(f"AuditQuery count error: {str(e)}")
+                current_app.logger.error(f"AuditQuery count error: {str(e)}")
                 return {'error': 'Database query failed'}
         
         # Handle pending audit queries
@@ -226,7 +226,7 @@ def _handle_database_query_direct(message: str, user_id: str, state_name: str) -
                     'intent_type': 'database_query'
                 }
             except Exception as e:
-                print(f"Pending audit query error: {str(e)}")
+                current_app.logger.error(f"Pending audit query error: {str(e)}")
                 return {'error': 'Database query failed'}
         
         # Enhanced state-specific queries
@@ -262,7 +262,7 @@ def _handle_database_query_direct(message: str, user_id: str, state_name: str) -
                             'intent_type': 'state_query'
                         }
             except Exception as e:
-                print(f"State query error: {str(e)}")
+                current_app.logger.error(f"State query error: {str(e)}")
                 return {'error': 'Database query failed'}
         
         # Enhanced comparison queries
@@ -303,7 +303,7 @@ def _handle_database_query_direct(message: str, user_id: str, state_name: str) -
                             'intent_type': 'comparison_query'
                         }
             except Exception as e:
-                print(f"Comparison query error: {str(e)}")
+                current_app.logger.error(f"Comparison query error: {str(e)}")
                 return {'error': 'Database query failed'}
         
         # Enhanced trend queries
@@ -331,7 +331,7 @@ def _handle_database_query_direct(message: str, user_id: str, state_name: str) -
                         'intent_type': 'trend_query'
                     }
             except Exception as e:
-                print(f"Trend query error: {str(e)}")
+                current_app.logger.error(f"Trend query error: {str(e)}")
                 return {'error': 'Database query failed'}
         
         # Complex natural language patterns
@@ -357,7 +357,7 @@ def _handle_database_query_direct(message: str, user_id: str, state_name: str) -
                             'intent_type': 'state_query'
                         }
                 except Exception as e:
-                    print(f"Complex state query error: {str(e)}")
+                    current_app.logger.error(f"Complex state query error: {str(e)}")
                     return {'error': 'Database query failed'}
         
         # Original state-specific queries (keep for backward compatibility)

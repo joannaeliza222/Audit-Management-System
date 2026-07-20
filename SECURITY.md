@@ -1,14 +1,23 @@
 # Security Policy
 
-## Security Overview
+## Reporting Vulnerabilities
 
-This document outlines the security measures implemented in the Audit Management System (AMS) and provides guidelines for secure deployment and operation.
+If you discover a security vulnerability in this project, please report it responsibly:
+
+1. **Do NOT** create public issues for security vulnerabilities
+2. Email security details to: ejoanna222@gmail.com
+3. Include:
+   - Description of the vulnerability
+   - Steps to reproduce
+   - Potential impact
+   - Suggested fix (if known)
+4. We will respond within 48 hours and provide a timeline for the fix
 
 ## Security Features
 
 ### Authentication & Authorization
 
-- **Password Hashing**: Uses Argon2id (memory-hard hashing) with configurable parameters
+- **Password Hashing**: Argon2id (memory-hard hashing) with configurable parameters
 - **Account Lockout**: Automatic lockout after 5 failed login attempts (15-minute window)
 - **Role-Based Access Control (RBAC)**: Four roles (admin, reviewer, modifier, viewer) with granular permissions
 - **Session Management**: Secure session cookies with configurable expiration
@@ -37,43 +46,6 @@ This document outlines the security measures implemented in the Audit Management
 - **Admin-Only Endpoints**: Protected with @admin_required decorator
 - **Secure Headers**: CSP, HSTS, X-Frame-Options, X-Content-Type-Options configured
 
-## Security Fixes Applied (Current Audit)
-
-### 1. CSRF Protection Re-enabled
-- **Issue**: CSRF protection was globally disabled
-- **Fix**: Re-enabled CSRF by default in `app/config.py`
-- **Impact**: Prevents cross-site request forgery attacks
-
-### 2. Missing Import Fixed
-- **Issue**: Missing `re` import in `security_service.py`
-- **Fix**: Added `import re` statement
-- **Impact**: Ensures input sanitization works correctly
-
-### 3. Unprotected Endpoints Secured
-- **Issue**: Natural language SQL endpoint lacked authentication
-- **Fix**: Added `@login_required` to `/api/ask-db` endpoint
-- **Impact**: Prevents unauthorized database access
-
-### 4. Chat Endpoint Hardened
-- **Issue**: Chat endpoint lacked rate limiting
-- **Fix**: Added `@login_required` and rate limiting (30/min)
-- **Impact**: Prevents abuse and DoS attacks
-
-### 5. SQL Injection Risk Fixed
-- **Issue**: Raw SQL without text() wrapper in health check
-- **Fix**: Wrapped SQL with `text()` function
-- **Impact**: Prevents SQL injection via raw queries
-
-### 6. Debug Logging Removed
-- **Issue**: Multiple `print()` statements in production code
-- **Fix**: Replaced with proper `logging` module
-- **Impact**: Better security and production readiness
-
-### 7. Auth Endpoints Rate Limited
-- **Issue**: Login and registration endpoints lacked rate limiting
-- **Fix**: Added rate limiting (login: 20/min, register: 5/hour)
-- **Impact**: Prevents brute force attacks
-
 ## Security Best Practices
 
 ### Deployment
@@ -97,11 +69,11 @@ This document outlines the security measures implemented in the Audit Management
 
 ### Database Security
 
-1. **Read-Only Role**: Run `setup_readonly_role.sql` to create read-only role for natural language SQL
+1. **Read-Only Role**: Create read-only role for natural language SQL queries
 2. **Row-Level Security**: Implement row-level security for multi-tenant data isolation
 3. **Connection Pooling**: Use connection pooling with proper timeout settings
 4. **Backup Encryption**: Encrypt database backups at rest
-5. **Query Limits**: Enforce query timeouts and row limits (already implemented)
+5. **Query Limits**: Enforce query timeouts and row limits
 
 ### Monitoring
 
@@ -110,19 +82,6 @@ This document outlines the security measures implemented in the Audit Management
 3. **Rate Limit Exceeded**: Monitor for rate limit violations
 4. **Database Queries**: Log all natural language SQL queries
 5. **File Uploads**: Monitor for suspicious file upload patterns
-
-## Vulnerability Reporting
-
-If you discover a security vulnerability, please report it responsibly:
-
-1. **Do NOT** create public issues for security vulnerabilities
-2. Email security details to: [ejoanna222@gmail.com]
-3. Include:
-   - Description of the vulnerability
-   - Steps to reproduce
-   - Potential impact
-   - Suggested fix (if known)
-4. We will respond within 48 hours and provide a timeline for the fix
 
 ## Security Checklist
 
@@ -165,3 +124,17 @@ Run `pip-audit` regularly to check for known vulnerabilities:
 pip install pip-audit
 pip-audit
 ```
+
+## Recent Security Fixes
+
+### 2026-07-14
+- **Dependency Updates**: Updated Pillow (10.2.0 → 12.3.0) and setuptools (70.2.0 → 78.1.1) to fix 11 security vulnerabilities
+- **Hardcoded IP Removed**: Removed hardcoded IP address from run.py for security
+- **Logging Improvements**: Replaced print() statements with proper logging in enhanced_chatbot.py
+
+### Previous Fixes
+- **CSRF Protection**: Re-enabled CSRF globally and added tokens to all forms
+- **Authentication**: Added @login_required to natural language SQL endpoint
+- **Rate Limiting**: Added rate limiting to login (20/min) and register (5/hour) endpoints
+- **SQL Injection**: Wrapped raw SQL with text() function in health check
+- **Password Hashing**: Upgraded to Argon2id with backward compatibility for legacy hashes
