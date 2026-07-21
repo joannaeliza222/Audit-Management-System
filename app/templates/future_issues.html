@@ -127,7 +127,7 @@
                 <th>Reply</th>
                 <th>Observed At</th>
                 <th>Fixed Version</th>
-                <th>Action</th>
+                <th>{% if can_mark_addressed %}Action{% else %}Status{% endif %}</th>
               </tr>
             </thead>
             <tbody>
@@ -151,6 +151,7 @@
                 <td class="align-middle">{{ issue.detected_at.strftime('%Y-%m-%d') }}</td>
                 <td class="align-middle">{{ issue.version_fixed or '-' }}</td>
                 <td class="align-middle">
+                  {% if can_mark_addressed %}
                   {% if issue.status == 'not addressed' %}
                   <form method="post" style="display:inline;" class="d-flex flex-column align-items-start gap-2">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
@@ -164,6 +165,16 @@
                     {% if issue.resolution_date %}
                     <div class="text-muted small">Resolved: {{ issue.resolution_date.strftime('%Y-%m-%d') }}</div>
                     {% endif %}
+                  {% endif %}
+                  {% else %}
+                  {% if issue.status == 'not addressed' %}
+                    <span class="text-warning fw-semibold"><i class="bi bi-clock"></i> Not Addressed</span>
+                  {% else %}
+                    <span class="text-success fw-semibold"><i class="bi bi-check-circle-fill"></i> Addressed</span>
+                    {% if issue.resolution_date %}
+                    <div class="text-muted small">Resolved: {{ issue.resolution_date.strftime('%Y-%m-%d') }}</div>
+                    {% endif %}
+                  {% endif %}
                   {% endif %}
                 </td>
               </tr>

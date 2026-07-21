@@ -65,6 +65,11 @@ def pending():
     role = get_role()
     user = current_user()
     email = session.get('email')
+    
+    # Prevent viewers from accessing pending page
+    if role == 'viewer':
+        flash("Access denied: you are not permitted to view Pending page.", "warning")
+        return redirect(url_for('auth.index'))
 
     unanswered_main = DraftFAQ.query.filter(
         (DraftFAQ.reply.is_(None)) | (DraftFAQ.reply == '')

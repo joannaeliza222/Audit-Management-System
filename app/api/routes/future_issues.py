@@ -87,11 +87,12 @@ def future_issues():
     """Main future issues page with filtering and status updates"""
     role = get_role()
     user = current_user()
-    if role == 'viewer' or role is None:
-        flash("Access denied: you are not permitted to view Future Issues.", "warning")
-        return redirect(url_for('auth.index'))
+    
+    # Allow viewers to view in read-only mode
+    can_mark_addressed = is_admin() or is_reviewer()
 
     if request.method == 'POST':
+        # Only allow admins and reviewers to update issues
         if not (is_admin() or is_reviewer()):
             flash("Not authorized to update issue status.", "warning")
             return redirect(url_for('future_issues.future_issues'))
