@@ -147,15 +147,6 @@ class Config:
         "application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,text/csv"
     ).split(","))
 
-    # Ask Your Database (Natural Language SQL) Configuration
-    OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
-    OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5-coder")
-    OLLAMA_TIMEOUT = int(os.getenv("OLLAMA_TIMEOUT", "120"))
-    SQL_QUERY_LIMIT = int(os.getenv("SQL_QUERY_LIMIT", "200"))
-    SQL_QUERY_TIMEOUT = int(os.getenv("SQL_QUERY_TIMEOUT", "10"))
-    READ_ONLY_DB_URI = os.getenv("READ_ONLY_DB_URI")  # Separate read-only database connection for safety
-    SQL_QUERY_LOG_FILE = os.getenv("SQL_QUERY_LOG_FILE", "logs/sql_queries.log")
-
     @staticmethod
     def init_app(app):
         """Initialize app with this configuration"""

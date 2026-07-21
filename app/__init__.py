@@ -154,10 +154,6 @@ def create_app(config_name=None):
     from app.api.routes.documents import documents_bp
     app.register_blueprint(documents_bp)
     
-    # Register natural language SQL blueprint
-    from app.api.routes.natural_language_sql import natural_language_sql_bp
-    app.register_blueprint(natural_language_sql_bp)
-    
     # Register document Q&A blueprints
     from app.api.routes.document_qa import document_qa_bp
     app.register_blueprint(document_qa_bp)

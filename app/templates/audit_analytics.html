@@ -153,7 +153,7 @@
                   <li><a class="dropdown-item" href="{{ url_for('replied.replied') }}">
                     <i class="bi bi-search"></i> Search Queries
                   </a></li>
-                  {% if role == 'admin' %}
+                  {% if role == 'admin' or role == 'reviewer' %}
                   <li><a class="dropdown-item" href="{{ url_for('review.review_drafts') }}">
                     <i class="bi bi-book"></i> Review Answers
                   </a></li>
@@ -557,16 +557,22 @@
             },
 
             showError(message) {
-                // Show error message
+                // Show error message in a fixed position to avoid layout shifts
                 const alert = document.createElement('div');
                 alert.className = 'alert alert-warning alert-dismissible fade show';
+                alert.style.position = 'fixed';
+                alert.style.top = '70px';
+                alert.style.left = '50%';
+                alert.style.transform = 'translateX(-50%)';
+                alert.style.zIndex = '9999';
+                alert.style.minWidth = '300px';
+                alert.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
                 alert.innerHTML = `
                     <i class="bi bi-exclamation-triangle"></i> ${message}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 `;
                 
-                const container = document.querySelector('.container-fluid');
-                container.insertBefore(alert, container.firstChild);
+                document.body.appendChild(alert);
                 
                 // Auto-remove after 5 seconds
                 setTimeout(() => alert.remove(), 5000);

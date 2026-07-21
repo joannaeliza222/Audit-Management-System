@@ -38,7 +38,7 @@
               <li><a class="dropdown-item" href="{{ url_for('replied.replied') }}">
                 <i class="bi bi-search"></i> Search Queries
               </a></li>
-              {% if role == 'admin' %}
+              {% if role == 'admin' or role == 'reviewer' %}
               <li><a class="dropdown-item" href="{{ url_for('review.review_drafts') }}">
                 <i class="bi bi-book"></i> Review Answers
               </a></li>
